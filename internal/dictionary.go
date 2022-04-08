@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ type dictAPIDefinitions struct {
 	Definition string
 }
 
-func define(w string) ([]Definition, error) {
+func Define(w string) ([]Definition, error) {
 	apiResp, err := queryWord(w)
 	if err != nil {
 		return nil, err
