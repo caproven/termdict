@@ -23,6 +23,11 @@ var listCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if len(vl.Words) == 0 {
+			fmt.Println("no words in vocab list")
+			os.Exit(1)
+		}
+
 		for _, word := range vl.Words {
 			fmt.Println(word)
 		}
