@@ -1,4 +1,4 @@
-package internal
+package dictionary
 
 import (
 	"encoding/json"

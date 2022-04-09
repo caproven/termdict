@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/caproven/termdict/internal"
+	"github.com/caproven/termdict/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -13,13 +13,17 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List the words in your vocab list",
 	Run: func(cmd *cobra.Command, args []string) {
-		words, err := internal.ListWords()
+		vf := storage.VocabFile{
+			Path: storage.DefaultVocabFile(),
+		}
+
+		vl, err := vf.Read()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		for _, word := range words {
+		for _, word := range vl.Words {
 			fmt.Println(word)
 		}
 	},
