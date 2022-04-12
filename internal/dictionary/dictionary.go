@@ -31,7 +31,7 @@ type dictAPIDefinitions struct {
 func Define(w string) ([]Definition, error) {
 	apiResp, err := queryWord(w)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to define word '%s': %w", w, err)
 	}
 
 	definitions := []Definition{}

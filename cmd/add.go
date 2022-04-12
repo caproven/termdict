@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/caproven/termdict/internal/dictionary"
 	"github.com/caproven/termdict/internal/storage"
 	"github.com/spf13/cobra"
 )
+
+var checkFlag bool
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
@@ -25,6 +28,13 @@ var addCmd = &cobra.Command{
 		}
 
 		for _, word := range args {
+			if checkFlag {
+				if _, err := dictionary.Define(word); err != nil {
+					fmt.Printf("failed to add word '%s', couldn't find a definition\n", word)
+					os.Exit(1)
+				}
+			}
+
 			if err := vl.AddWord(word); err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -40,4 +50,6 @@ var addCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(addCmd)
+
+	addCmd.Flags().BoolVarP(&checkFlag, "check", "c", true, "check that words can be defined before adding")
 }
