@@ -32,8 +32,9 @@ var randomCmd = &cobra.Command{
 		}
 
 		word := vl.Words[rand.Intn(len(vl.Words))]
+		dict := dictionary.Default()
 
-		defs, err := dictionary.Define(word)
+		defs, err := dict.Define(word)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

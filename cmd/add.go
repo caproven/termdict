@@ -27,9 +27,11 @@ var addCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		dict := dictionary.Default()
+
 		for _, word := range args {
 			if checkFlag {
-				if _, err := dictionary.Define(word); err != nil {
+				if _, err := dict.Define(word); err != nil {
 					fmt.Printf("failed to add word '%s', couldn't find a definition\n", word)
 					os.Exit(1)
 				}
