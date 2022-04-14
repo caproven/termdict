@@ -4,12 +4,12 @@ import (
 	"os"
 
 	"github.com/caproven/termdict/cmd"
-	"github.com/caproven/termdict/storage"
+	"github.com/caproven/termdict/vocab"
 )
 
 func main() {
-	s := storage.VocabFile{
-		Path: storage.DefaultVocabFile(),
+	s := vocab.File{
+		Path: vocab.DefaultFilepath(),
 	}
 
 	cfg := &cmd.Config{

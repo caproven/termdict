@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/storage"
+	"github.com/caproven/termdict/vocab"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +31,7 @@ func newRandomCommand(cfg *Config) *cobra.Command {
 	return cmd
 }
 
-func (o *randomOptions) run(out io.Writer, s storage.VocabStorage) error {
+func (o *randomOptions) run(out io.Writer, s vocab.Storage) error {
 	vl, err := s.Read()
 	if err != nil {
 		return nil

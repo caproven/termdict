@@ -10,30 +10,37 @@ import (
 
 const endpoint string = "https://api.dictionaryapi.dev/api/v2/entries/en"
 
+// APIResponse is the dictionary API response
 type APIResponse struct {
 	Meanings []APIMeanings
 }
 
+// APIMeanings is a series of definitions broken up
+// by a specific part of speech
 type APIMeanings struct {
 	PartOfSpeech string
 	Definitions  []APIDefinition
 }
 
+// APIDefinition is a single definition for a word
 type APIDefinition struct {
 	Definition string
 }
 
-type DictionaryAPI struct {
+// API lets you interact with a dictionary API
+type API struct {
 	URL string
 }
 
-func NewDictionaryAPI() DictionaryAPI {
-	return DictionaryAPI{
+// NewAPI creates a new instance for connecting to a dictionary API
+func NewAPI() API {
+	return API{
 		URL: endpoint,
 	}
 }
 
-func (d DictionaryAPI) Define(word string) ([]Entry, error) {
+// Define defines a word
+func (d API) Define(word string) ([]Entry, error) {
 	apiResp, err := d.query(word)
 	if err != nil {
 		return nil, fmt.Errorf("failed to define word '%s': %w", word, err)
@@ -54,7 +61,7 @@ func (d DictionaryAPI) Define(word string) ([]Entry, error) {
 	return entries, nil
 }
 
-func (d DictionaryAPI) query(w string) (APIResponse, error) {
+func (d API) query(w string) (APIResponse, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s", d.URL, w))
 	if err != nil {
 		return APIResponse{}, err

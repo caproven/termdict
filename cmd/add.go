@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/storage"
+	"github.com/caproven/termdict/vocab"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +33,7 @@ func newAddCmd(cfg *Config) *cobra.Command {
 	return cmd
 }
 
-func (o *addOptions) run(out io.Writer, s storage.VocabStorage) error {
+func (o *addOptions) run(out io.Writer, s vocab.Storage) error {
 	vl, err := s.Read()
 	if err != nil {
 		return err

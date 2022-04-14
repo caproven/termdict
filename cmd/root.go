@@ -3,15 +3,17 @@ package cmd
 import (
 	"io"
 
-	"github.com/caproven/termdict/storage"
+	"github.com/caproven/termdict/vocab"
 	"github.com/spf13/cobra"
 )
 
+// Config represents the CLI configuration
 type Config struct {
 	Out     io.Writer
-	Storage storage.VocabStorage
+	Storage vocab.Storage
 }
 
+// NewRootCmd creates and returns an instance of the root command
 func NewRootCmd(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "termdict",

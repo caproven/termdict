@@ -5,11 +5,13 @@ import (
 	"strings"
 )
 
-type VocabList struct {
+// List is vocab list, containing words
+type List struct {
 	Words []string
 }
 
-func (vl *VocabList) AddWord(w string) error {
+// AddWord adds a word to the vocab list
+func (vl *List) AddWord(w string) error {
 	w = strings.ToLower(w)
 
 	if vl.wordExists(w) {
@@ -20,7 +22,8 @@ func (vl *VocabList) AddWord(w string) error {
 	return nil
 }
 
-func (vl *VocabList) RemoveWord(w string) error {
+// RemoveWord removes a word from the vocab list
+func (vl *List) RemoveWord(w string) error {
 	w = strings.ToLower(w)
 
 	idx := vl.idxOf(w)
@@ -34,7 +37,7 @@ func (vl *VocabList) RemoveWord(w string) error {
 
 // idxOf finds the index of the given word in the VocabList,
 // or -1 if the word is not found
-func (vl *VocabList) idxOf(w string) int {
+func (vl *List) idxOf(w string) int {
 	for i, word := range vl.Words {
 		if w == word {
 			return i
@@ -43,6 +46,7 @@ func (vl *VocabList) idxOf(w string) int {
 	return -1
 }
 
-func (vl *VocabList) wordExists(w string) bool {
+// wordExists checks if a word exists in the vocab list
+func (vl *List) wordExists(w string) bool {
 	return vl.idxOf(w) != -1
 }
