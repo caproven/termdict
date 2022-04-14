@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/caproven/termdict/internal/vocab"
+	"github.com/caproven/termdict/vocab"
 )
 
 const configSubdir string = "termdict"

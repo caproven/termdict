@@ -1,43 +1,47 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"io"
 
-	"github.com/caproven/termdict/internal/storage"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
-// removeCmd represents the remove command
-var removeCmd = &cobra.Command{
-	Use:   "remove word ...",
-	Short: "Remove words from your vocab list",
-	Args:  cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		vf := storage.VocabFile{
-			Path: storage.DefaultVocabFile(),
-		}
-
-		vl, err := vf.Read()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		for _, word := range args {
-			if err := vl.RemoveWord(word); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}
-
-		if err := vf.Write(vl); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	},
+type removeOptions struct {
+	words []string
 }
 
-func init() {
-	rootCmd.AddCommand(removeCmd)
+func newRemoveCommand(cfg *Config) *cobra.Command {
+	o := &removeOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "remove word ...",
+		Short: "Remove words from your vocab list",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			o.words = args
+
+			return o.run(cfg.Out, cfg.Storage)
+		},
+	}
+	return cmd
+}
+
+func (o *removeOptions) run(out io.Writer, s storage.VocabStorage) error {
+	vl, err := s.Read()
+	if err != nil {
+		return err
+	}
+
+	for _, word := range o.words {
+		if err := vl.RemoveWord(word); err != nil {
+			return err
+		}
+	}
+
+	if err := s.Write(vl); err != nil {
+		return err
+	}
+
+	return nil
 }

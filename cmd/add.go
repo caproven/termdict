@@ -2,56 +2,59 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"io"
 
-	"github.com/caproven/termdict/internal/dictionary"
-	"github.com/caproven/termdict/internal/storage"
+	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
-var checkFlag bool
-
-// addCmd represents the add command
-var addCmd = &cobra.Command{
-	Use:   "add word ...",
-	Short: "Add words to your vocab list",
-	Args:  cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		vf := storage.VocabFile{
-			Path: storage.DefaultVocabFile(),
-		}
-
-		vl, err := vf.Read()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		dict := dictionary.Default()
-
-		for _, word := range args {
-			if checkFlag {
-				if _, err := dict.Define(word); err != nil {
-					fmt.Printf("failed to add word '%s', couldn't find a definition\n", word)
-					os.Exit(1)
-				}
-			}
-
-			if err := vl.AddWord(word); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-		}
-
-		if err := vf.Write(vl); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	},
+type addOptions struct {
+	words   []string
+	noCheck bool
 }
 
-func init() {
-	rootCmd.AddCommand(addCmd)
+func newAddCmd(cfg *Config) *cobra.Command {
+	o := &addOptions{}
 
-	addCmd.Flags().BoolVarP(&checkFlag, "check", "c", true, "check that words can be defined before adding")
+	cmd := &cobra.Command{
+		Use:   "add word ...",
+		Short: "Add words to your vocab list",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			o.words = args
+
+			return o.run(cfg.Out, cfg.Storage)
+		},
+	}
+
+	cmd.Flags().BoolVarP(&o.noCheck, "no-check", "n", false, "don't check that words can be defined before adding")
+
+	return cmd
+}
+
+func (o *addOptions) run(out io.Writer, s storage.VocabStorage) error {
+	vl, err := s.Read()
+	if err != nil {
+		return err
+	}
+
+	dict := dictionary.Default()
+
+	for _, word := range o.words {
+		if !o.noCheck {
+			if _, err := dict.Define(word); err != nil {
+				return fmt.Errorf("failed to add word '%s'; couldn't find a definition", word)
+			}
+		}
+
+		if err := vl.AddWord(word); err != nil {
+			return err
+		}
+	}
+
+	if err := s.Write(vl); err != nil {
+		return err
+	}
+	return nil
 }

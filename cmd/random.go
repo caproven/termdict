@@ -2,50 +2,55 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"math/rand"
-	"os"
 	"time"
 
-	"github.com/caproven/termdict/internal/dictionary"
-	"github.com/caproven/termdict/internal/storage"
+	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
-// randomCmd represents the random command
-var randomCmd = &cobra.Command{
-	Use:   "random",
-	Short: "Define a random word from your vocab list",
-	Run: func(cmd *cobra.Command, args []string) {
-		vf := storage.VocabFile{
-			Path: storage.DefaultVocabFile(),
-		}
-
-		vl, err := vf.Read()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		if len(vl.Words) == 0 {
-			fmt.Println("no words in vocab list")
-			os.Exit(1)
-		}
-
-		word := vl.Words[rand.Intn(len(vl.Words))]
-		dict := dictionary.Default()
-
-		defs, err := dict.Define(word)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		printDefinition(os.Stdout, word, defs)
-	},
-}
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
 
-	rootCmd.AddCommand(randomCmd)
+type randomOptions struct {
+}
+
+func newRandomCommand(cfg *Config) *cobra.Command {
+	o := &randomOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "random",
+		Short: "Define a random word from your vocab list",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return o.run(cfg.Out, cfg.Storage)
+		},
+	}
+	return cmd
+}
+
+func (o *randomOptions) run(out io.Writer, s storage.VocabStorage) error {
+	vl, err := s.Read()
+	if err != nil {
+		return nil
+	}
+
+	if len(vl.Words) == 0 {
+		fmt.Fprintln(out, "no words in vocab list")
+		return nil
+	}
+
+	word := vl.Words[rand.Intn(len(vl.Words))]
+	dict := dictionary.Default()
+
+	defs, err := dict.Define(word)
+	if err != nil {
+		return err
+	}
+
+	dictionary.PrintDefinition(out, word, defs)
+
+	return nil
 }
