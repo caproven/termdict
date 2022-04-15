@@ -25,7 +25,7 @@ func newListCommand(cfg *Config) *cobra.Command {
 }
 
 func (o *listOptions) run(out io.Writer, s vocab.Storage) error {
-	vl, err := s.Read()
+	vl, err := s.Load()
 	if err != nil {
 		return err
 	}

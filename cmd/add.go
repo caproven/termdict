@@ -34,7 +34,7 @@ func newAddCmd(cfg *Config) *cobra.Command {
 }
 
 func (o *addOptions) run(out io.Writer, s vocab.Storage) error {
-	vl, err := s.Read()
+	vl, err := s.Load()
 	if err != nil {
 		return err
 	}
@@ -53,8 +53,5 @@ func (o *addOptions) run(out io.Writer, s vocab.Storage) error {
 		}
 	}
 
-	if err := s.Write(vl); err != nil {
-		return err
-	}
-	return nil
+	return s.Save(vl)
 }

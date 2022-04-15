@@ -32,7 +32,7 @@ func newRandomCommand(cfg *Config) *cobra.Command {
 }
 
 func (o *randomOptions) run(out io.Writer, s vocab.Storage) error {
-	vl, err := s.Read()
+	vl, err := s.Load()
 	if err != nil {
 		return nil
 	}

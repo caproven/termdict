@@ -13,20 +13,23 @@ const vocabFile string = "vocab.json"
 
 // Storage is an interface for the storage of a vocab list
 type Storage interface {
-	Read() (List, error)
-	Write(List) error
+	// Load a vocab list from storage
+	Load() (List, error)
+	// Save a vocab list to storage
+	Save(List) error
 }
 
-// File represents a vocab list on the filesystem
+// File represents vocab list storage on the filesystem. Implements
+// the Storage interface
 type File struct {
 	Path string
 }
 
-// Read reads a vocab list from the filesystem
-func (vf File) Read() (List, error) {
+// Load a vocab list from a file
+func (f File) Load() (List, error) {
 	var vl List
 
-	if _, err := os.Stat(vf.Path); err != nil {
+	if _, err := os.Stat(f.Path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			// file doesn't exist, just return empty list
 			return vl, nil
@@ -34,7 +37,7 @@ func (vf File) Read() (List, error) {
 		return List{}, err
 	}
 
-	data, err := os.ReadFile(vf.Path)
+	data, err := os.ReadFile(f.Path)
 	if err != nil {
 		return List{}, err
 	}
@@ -46,18 +49,14 @@ func (vf File) Read() (List, error) {
 	return vl, nil
 }
 
-// Write writes a vocab list to the filesystem
-func (vf File) Write(vl List) error {
+// Save a vocab list to a file
+func (f File) Save(vl List) error {
 	data, err := json.Marshal(vl.Words)
 	if err != nil {
 		return err
 	}
 
-	if err := createConfigDir(); err != nil {
-		return err
-	}
-
-	return os.WriteFile(vf.Path, data, os.ModePerm)
+	return os.WriteFile(f.Path, data, os.ModePerm)
 }
 
 // DefaultFilepath returns the default filepath for where
@@ -66,11 +65,12 @@ func DefaultFilepath() string {
 	return filepath.Join(defaultConfigDir(), vocabFile)
 }
 
+// CreateConfigDir creates a config directory for the application
+func CreateConfigDir() error {
+	return os.MkdirAll(defaultConfigDir(), os.ModePerm)
+}
+
 func defaultConfigDir() string {
 	configDir, _ := os.UserConfigDir()
 	return filepath.Join(configDir, configSubdir)
-}
-
-func createConfigDir() error {
-	return os.MkdirAll(defaultConfigDir(), os.ModePerm)
 }

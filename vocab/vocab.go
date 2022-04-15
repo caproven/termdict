@@ -10,11 +10,12 @@ type List struct {
 	Words []string
 }
 
-// AddWord adds a word to the vocab list
+// AddWord adds a word to the vocab list. Duplicates are not
+// permitted, and capitalization is ignored
 func (vl *List) AddWord(w string) error {
 	w = strings.ToLower(w)
 
-	if vl.wordExists(w) {
+	if vl.WordExists(w) {
 		return fmt.Errorf("word '%s' already exists", w)
 	}
 
@@ -22,7 +23,8 @@ func (vl *List) AddWord(w string) error {
 	return nil
 }
 
-// RemoveWord removes a word from the vocab list
+// RemoveWord removes a word from the vocab list. Capitalization
+// is ignored
 func (vl *List) RemoveWord(w string) error {
 	w = strings.ToLower(w)
 
@@ -35,6 +37,11 @@ func (vl *List) RemoveWord(w string) error {
 	return nil
 }
 
+// WordExists checks if a word exists in the vocab list
+func (vl *List) WordExists(w string) bool {
+	return vl.idxOf(w) != -1
+}
+
 // idxOf finds the index of the given word in the VocabList,
 // or -1 if the word is not found
 func (vl *List) idxOf(w string) int {
@@ -44,9 +51,4 @@ func (vl *List) idxOf(w string) int {
 		}
 	}
 	return -1
-}
-
-// wordExists checks if a word exists in the vocab list
-func (vl *List) wordExists(w string) bool {
-	return vl.idxOf(w) != -1
 }

@@ -8,6 +8,10 @@ import (
 )
 
 func main() {
+	if err := vocab.CreateConfigDir(); err != nil {
+		panic(err)
+	}
+
 	s := vocab.File{
 		Path: vocab.DefaultFilepath(),
 	}
@@ -16,8 +20,7 @@ func main() {
 		Out:     os.Stdout,
 		Storage: s,
 	}
-	err := cmd.NewRootCmd(cfg).Execute()
-	if err != nil {
+	if err := cmd.NewRootCmd(cfg).Execute(); err != nil {
 		os.Exit(1)
 	}
 }
