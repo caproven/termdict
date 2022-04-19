@@ -25,6 +25,10 @@ func NewRandomCommand(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "random",
 		Short: "Define a random word from your vocab list",
+		Long: `Define a word at random from your personal vocab list.
+
+Sample usage:
+  termdict random`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.run(cfg.Out, cfg.Storage, cfg.DictAPI)
 		},

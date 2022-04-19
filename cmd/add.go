@@ -21,7 +21,13 @@ func NewAddCommand(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add word ...",
 		Short: "Add words to your vocab list",
-		Args:  cobra.MinimumNArgs(1),
+		Long: `Add words to your personal vocab list.
+
+Sample usage:
+  termdict add comeuppance
+  termdict add ameliorate entropy
+  termdict add omg --no-check`,
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 

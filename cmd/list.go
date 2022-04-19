@@ -18,6 +18,10 @@ func NewListCommand(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List the words in your vocab list",
+		Long: `List the words in your personal vocab list.
+
+Sample usage:
+  termdict list`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.run(cfg.Out, cfg.Storage)
 		},

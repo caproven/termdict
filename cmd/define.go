@@ -18,7 +18,12 @@ func NewDefineCommand(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "define word",
 		Short: "Define a word",
-		Args:  cobra.ExactArgs(1),
+		Long: `Lookup the definition for a given word.
+
+Sample usage:
+  termdict define organic
+  termdict define symphonic`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.word = args[0]
 
