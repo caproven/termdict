@@ -18,20 +18,21 @@ func init() {
 type randomOptions struct {
 }
 
-func newRandomCommand(cfg *Config) *cobra.Command {
+// NewRandomCommand constructs the random command
+func NewRandomCommand(cfg *Config) *cobra.Command {
 	o := &randomOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "random",
 		Short: "Define a random word from your vocab list",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.run(cfg.Out, cfg.Storage)
+			return o.run(cfg.Out, cfg.Storage, cfg.DictAPI)
 		},
 	}
 	return cmd
 }
 
-func (o *randomOptions) run(out io.Writer, s vocab.Storage) error {
+func (o *randomOptions) run(out io.Writer, s vocab.Storage, api dictionary.API) error {
 	vl, err := s.Load()
 	if err != nil {
 		return nil
@@ -43,9 +44,8 @@ func (o *randomOptions) run(out io.Writer, s vocab.Storage) error {
 	}
 
 	word := vl.Words[rand.Intn(len(vl.Words))]
-	dict := dictionary.Default()
 
-	defs, err := dict.Define(word)
+	defs, err := api.Define(word)
 	if err != nil {
 		return err
 	}

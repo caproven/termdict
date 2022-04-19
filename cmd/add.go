@@ -14,7 +14,8 @@ type addOptions struct {
 	noCheck bool
 }
 
-func newAddCmd(cfg *Config) *cobra.Command {
+// NewAddCommand constructs the add command
+func NewAddCommand(cfg *Config) *cobra.Command {
 	o := &addOptions{}
 
 	cmd := &cobra.Command{
@@ -24,7 +25,7 @@ func newAddCmd(cfg *Config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 
-			return o.run(cfg.Out, cfg.Storage)
+			return o.run(cfg.Out, cfg.Storage, cfg.DictAPI)
 		},
 	}
 
@@ -33,17 +34,15 @@ func newAddCmd(cfg *Config) *cobra.Command {
 	return cmd
 }
 
-func (o *addOptions) run(out io.Writer, s vocab.Storage) error {
+func (o *addOptions) run(out io.Writer, s vocab.Storage, api dictionary.API) error {
 	vl, err := s.Load()
 	if err != nil {
 		return err
 	}
 
-	dict := dictionary.Default()
-
 	for _, word := range o.words {
 		if !o.noCheck {
-			if _, err := dict.Define(word); err != nil {
+			if _, err := api.Define(word); err != nil {
 				return fmt.Errorf("failed to add word '%s'; couldn't find a definition", word)
 			}
 		}

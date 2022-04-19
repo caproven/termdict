@@ -11,7 +11,8 @@ type defineOptions struct {
 	word string
 }
 
-func newDefineCommand(cfg *Config) *cobra.Command {
+// NewDefineCommand constructs the define command
+func NewDefineCommand(cfg *Config) *cobra.Command {
 	o := &defineOptions{}
 
 	cmd := &cobra.Command{
@@ -21,16 +22,14 @@ func newDefineCommand(cfg *Config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.word = args[0]
 
-			return o.run(cfg.Out)
+			return o.run(cfg.Out, cfg.DictAPI)
 		},
 	}
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer) error {
-	dict := dictionary.Default()
-
-	defs, err := dict.Define(o.word)
+func (o *defineOptions) run(out io.Writer, api dictionary.API) error {
+	defs, err := api.Define(o.word)
 	if err != nil {
 		return err
 	}

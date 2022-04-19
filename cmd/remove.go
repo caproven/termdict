@@ -11,7 +11,8 @@ type removeOptions struct {
 	words []string
 }
 
-func newRemoveCommand(cfg *Config) *cobra.Command {
+// NewRemoveCommand constructs the remove command
+func NewRemoveCommand(cfg *Config) *cobra.Command {
 	o := &removeOptions{}
 
 	cmd := &cobra.Command{

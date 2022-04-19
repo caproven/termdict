@@ -11,22 +11,13 @@ import (
 const configSubdir string = "termdict"
 const vocabFile string = "vocab.json"
 
-// Storage is an interface for the storage of a vocab list
-type Storage interface {
-	// Load a vocab list from storage
-	Load() (List, error)
-	// Save a vocab list to storage
-	Save(List) error
-}
-
-// File represents vocab list storage on the filesystem. Implements
-// the Storage interface
-type File struct {
+// Storage for a vocab list
+type Storage struct {
 	Path string
 }
 
-// Load a vocab list from a file
-func (f File) Load() (List, error) {
+// Load a vocab list from storage
+func (f Storage) Load() (List, error) {
 	var vl List
 
 	if _, err := os.Stat(f.Path); err != nil {
@@ -49,8 +40,8 @@ func (f File) Load() (List, error) {
 	return vl, nil
 }
 
-// Save a vocab list to a file
-func (f File) Save(vl List) error {
+// Save a vocab list to storage
+func (f Storage) Save(vl List) error {
 	data, err := json.Marshal(vl.Words)
 	if err != nil {
 		return err

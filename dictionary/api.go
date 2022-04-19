@@ -8,7 +8,12 @@ import (
 	"net/http"
 )
 
-const endpoint string = "https://api.dictionaryapi.dev/api/v2/entries/en"
+// DefaultURL is the default URL for the dictionary API
+const DefaultURL string = "https://api.dictionaryapi.dev"
+
+// EndpointPath is the endpoint of the dictionary API used
+// for defining words
+const EndpointPath string = "/api/v2/entries/en/"
 
 // APIResponse is the dictionary API response
 type APIResponse struct {
@@ -32,10 +37,10 @@ type API struct {
 	URL string
 }
 
-// NewAPI creates a new instance for connecting to a dictionary API
-func NewAPI() API {
+// NewDefaultAPI creates a new instance for connecting to a dictionary API
+func NewDefaultAPI() API {
 	return API{
-		URL: endpoint,
+		URL: DefaultURL,
 	}
 }
 
@@ -62,7 +67,7 @@ func (d API) Define(word string) ([]Entry, error) {
 }
 
 func (d API) query(w string) (APIResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%s", d.URL, w))
+	resp, err := http.Get(fmt.Sprintf("%s%s%s", d.URL, EndpointPath, w))
 	if err != nil {
 		return APIResponse{}, err
 	}

@@ -11,7 +11,8 @@ import (
 type listOptions struct {
 }
 
-func newListCommand(cfg *Config) *cobra.Command {
+// NewListCommand constructs the list command
+func NewListCommand(cfg *Config) *cobra.Command {
 	o := &listOptions{}
 
 	cmd := &cobra.Command{
