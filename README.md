@@ -27,6 +27,14 @@ ameliorate
 [verb] To become better; improve.
 ```
 
+## Install
+
+Install via the below command:
+
+```bash
+go install github.com/caproven/termdict@latest
+```
+
 ## Usage
 
 Run `termdict` to see a list of available commands. Use the `--help` on any command to see all options.
