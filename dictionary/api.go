@@ -48,7 +48,7 @@ func NewDefaultAPI() API {
 func (d API) Define(word string) ([]Entry, error) {
 	apiResp, err := d.query(word)
 	if err != nil {
-		return nil, fmt.Errorf("failed to define word '%s': %w", word, err)
+		return nil, fmt.Errorf("failed to define word '%s'", word)
 	}
 
 	entries := []Entry{}
