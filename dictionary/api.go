@@ -45,25 +45,25 @@ func NewDefaultAPI() API {
 }
 
 // Define defines a word
-func (d API) Define(word string) ([]Entry, error) {
+func (d API) Define(word string) ([]Definition, error) {
 	apiResp, err := d.query(word)
 	if err != nil {
 		return nil, fmt.Errorf("failed to define word '%s'", word)
 	}
 
-	entries := []Entry{}
+	defs := []Definition{}
 
-	for _, meaning := range apiResp.Meanings {
-		for _, def := range meaning.Definitions {
-			entry := Entry{
-				PartOfSpeech: meaning.PartOfSpeech,
-				Definition:   def.Definition,
+	for _, respMeaning := range apiResp.Meanings {
+		for _, respDef := range respMeaning.Definitions {
+			def := Definition{
+				PartOfSpeech: respMeaning.PartOfSpeech,
+				Meaning:      respDef.Definition,
 			}
-			entries = append(entries, entry)
+			defs = append(defs, def)
 		}
 	}
 
-	return entries, nil
+	return defs, nil
 }
 
 func (d API) query(w string) (APIResponse, error) {

@@ -3,7 +3,7 @@ package cmd
 import (
 	"io"
 
-	"github.com/caproven/termdict/vocab"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -27,14 +27,14 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 
-			return o.run(cfg.Out, cfg.Storage)
+			return o.run(cfg.Out, cfg.Vocab)
 		},
 	}
 	return cmd
 }
 
-func (o *removeOptions) run(out io.Writer, s vocab.Storage) error {
-	vl, err := s.Load()
+func (o *removeOptions) run(out io.Writer, v storage.VocabRepo) error {
+	vl, err := v.Load()
 	if err != nil {
 		return err
 	}
@@ -45,5 +45,5 @@ func (o *removeOptions) run(out io.Writer, s vocab.Storage) error {
 		}
 	}
 
-	return s.Save(vl)
+	return v.Save(vl)
 }

@@ -5,19 +5,19 @@ import (
 	"io"
 )
 
-// Entry is a single dictionary entry for a word
-type Entry struct {
+// Definition is a single dictionary entry for a word
+type Definition struct {
 	PartOfSpeech string
-	Definition   string
+	Meaning      string
 }
 
-// String formats an Entry as a string
-func (e Entry) String() string {
-	return fmt.Sprintf("[%s] %s", e.PartOfSpeech, e.Definition)
+// String formats a word definition as a string
+func (def Definition) String() string {
+	return fmt.Sprintf("[%s] %s", def.PartOfSpeech, def.Meaning)
 }
 
 // PrintDefinition neatly prints a word along with its definitions
-func PrintDefinition(w io.Writer, word string, defs []Entry) {
+func PrintDefinition(w io.Writer, word string, defs []Definition) {
 	fmt.Fprintln(w, word)
 	for _, def := range defs {
 		fmt.Fprintln(w, def)

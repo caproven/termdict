@@ -59,9 +59,9 @@ func TestListCmd(t *testing.T) {
 			var b bytes.Buffer
 
 			cfg := Config{
-				Out:     &b,
-				Storage: s,
-				DictAPI: api,
+				Out:   &b,
+				Vocab: s,
+				Dict:  api,
 			}
 
 			cmd := NewRootCmd(&cfg)

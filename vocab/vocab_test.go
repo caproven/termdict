@@ -172,8 +172,7 @@ func assertLists(t testing.TB, got, expected List) {
 	t.Helper()
 
 	if len(got.Words) != len(expected.Words) {
-		t.Errorf("lists not the same length; got %v, expected %v", got, expected)
-		return
+		t.Fatalf("lists not the same length; got %v, expected %v", got, expected)
 	}
 
 	for i, v := range got.Words {

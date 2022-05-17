@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/vocab"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +31,7 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 
-			return o.run(cfg.Out, cfg.Storage, cfg.DictAPI)
+			return o.run(cfg.Out, cfg.Vocab, cfg.Dict)
 		},
 	}
 
@@ -40,15 +40,15 @@ Sample usage:
 	return cmd
 }
 
-func (o *addOptions) run(out io.Writer, s vocab.Storage, api dictionary.API) error {
-	vl, err := s.Load()
+func (o *addOptions) run(out io.Writer, v storage.VocabRepo, d dictionary.API) error {
+	vl, err := v.Load()
 	if err != nil {
 		return err
 	}
 
 	for _, word := range o.words {
 		if !o.noCheck {
-			if _, err := api.Define(word); err != nil {
+			if _, err := d.Define(word); err != nil {
 				return fmt.Errorf("failed to add word '%s'; couldn't find a definition", word)
 			}
 		}
@@ -58,5 +58,5 @@ func (o *addOptions) run(out io.Writer, s vocab.Storage, api dictionary.API) err
 		}
 	}
 
-	return s.Save(vl)
+	return v.Save(vl)
 }

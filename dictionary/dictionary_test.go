@@ -7,23 +7,23 @@ import (
 )
 
 func TestEntryStringer(t *testing.T) {
-	var _ fmt.Stringer = Entry{}
+	var _ fmt.Stringer = Definition{}
 }
 
 func TestPrintDefinition(t *testing.T) {
 	cases := []struct {
 		name        string
 		word        string
-		definitions []Entry
+		definitions []Definition
 		expected    string
 	}{
 		{
 			name: "single entry",
 			word: "sponge",
-			definitions: []Entry{
+			definitions: []Definition{
 				{
 					PartOfSpeech: "noun",
-					Definition:   "A piece of porous material used for washing",
+					Meaning:      "A piece of porous material used for washing",
 				},
 			},
 			expected: `sponge
@@ -33,14 +33,14 @@ func TestPrintDefinition(t *testing.T) {
 		{
 			name: "multiple entries",
 			word: "sponge",
-			definitions: []Entry{
+			definitions: []Definition{
 				{
 					PartOfSpeech: "noun",
-					Definition:   "A piece of porous material used for washing",
+					Meaning:      "A piece of porous material used for washing",
 				},
 				{
 					PartOfSpeech: "verb",
-					Definition:   "To clean, soak up, or dab with a sponge",
+					Meaning:      "To clean, soak up, or dab with a sponge",
 				},
 			},
 			expected: `sponge

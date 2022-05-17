@@ -1,31 +1,33 @@
-package vocab
+package storage
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/caproven/termdict/vocab"
 )
 
 func TestLoad(t *testing.T) {
 	cases := []struct {
 		name     string
 		input    string
-		expected List
+		expected vocab.List
 	}{
 		{
 			name:     "empty list",
 			input:    `[]`,
-			expected: List{Words: []string{}},
+			expected: vocab.List{Words: []string{}},
 		},
 		{
 			name:     "single word",
 			input:    `["kappa"]`,
-			expected: List{Words: []string{"kappa"}},
+			expected: vocab.List{Words: []string{"kappa"}},
 		},
 		{
 			name:     "multiple words",
 			input:    `["kappa", "cucumber", "terminal", "dictionary"]`,
-			expected: List{Words: []string{"kappa", "cucumber", "terminal", "dictionary"}},
+			expected: vocab.List{Words: []string{"kappa", "cucumber", "terminal", "dictionary"}},
 		},
 	}
 
@@ -37,7 +39,7 @@ func TestLoad(t *testing.T) {
 			}
 			defer os.Remove(fName)
 
-			s := Storage{
+			s := VocabRepo{
 				Path: fName,
 			}
 
@@ -51,7 +53,7 @@ func TestLoad(t *testing.T) {
 	}
 
 	t.Run("file doesn't exist", func(t *testing.T) {
-		s := Storage{
+		s := VocabRepo{
 			Path: filepath.Join(os.TempDir(), "thisfileshouldntexist"),
 		}
 
@@ -59,7 +61,7 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to load storage: %v", err)
 		}
-		expect := List{Words: []string{}}
+		expect := vocab.List{Words: []string{}}
 
 		assertLists(t, got, expect)
 	})
@@ -68,22 +70,22 @@ func TestLoad(t *testing.T) {
 func TestSave(t *testing.T) {
 	cases := []struct {
 		name     string
-		input    List
+		input    vocab.List
 		expected string
 	}{
 		{
 			name:     "empty list",
-			input:    List{Words: []string{}},
+			input:    vocab.List{Words: []string{}},
 			expected: `[]`,
 		},
 		{
 			name:     "single word",
-			input:    List{Words: []string{"kappa"}},
+			input:    vocab.List{Words: []string{"kappa"}},
 			expected: `["kappa"]`,
 		},
 		{
 			name:     "multiple words",
-			input:    List{Words: []string{"kappa", "cucumber", "terminal", "dictionary"}},
+			input:    vocab.List{Words: []string{"kappa", "cucumber", "terminal", "dictionary"}},
 			expected: `["kappa","cucumber","terminal","dictionary"]`,
 		},
 	}
@@ -96,7 +98,7 @@ func TestSave(t *testing.T) {
 			}
 			defer os.Remove(fName)
 
-			s := Storage{
+			s := VocabRepo{
 				Path: fName,
 			}
 
@@ -134,4 +136,18 @@ func newFile() (string, error) {
 	}
 	f.Close()
 	return f.Name(), err
+}
+
+func assertLists(t testing.TB, got, expected vocab.List) {
+	t.Helper()
+
+	if len(got.Words) != len(expected.Words) {
+		t.Fatalf("lists not the same length; got %v, expected %v", got, expected)
+	}
+
+	for i, v := range got.Words {
+		if v != expected.Words[i] {
+			t.Errorf("lists did not match; got %v, expected %v", got, expected)
+		}
+	}
 }

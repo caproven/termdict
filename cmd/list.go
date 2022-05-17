@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/caproven/termdict/vocab"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +23,14 @@ func NewListCommand(cfg *Config) *cobra.Command {
 Sample usage:
   termdict list`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.run(cfg.Out, cfg.Storage)
+			return o.run(cfg.Out, cfg.Vocab)
 		},
 	}
 	return cmd
 }
 
-func (o *listOptions) run(out io.Writer, s vocab.Storage) error {
-	vl, err := s.Load()
+func (o *listOptions) run(out io.Writer, v storage.VocabRepo) error {
+	vl, err := v.Load()
 	if err != nil {
 		return err
 	}

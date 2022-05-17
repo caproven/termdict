@@ -85,9 +85,9 @@ func TestRemoveCmd(t *testing.T) {
 			defer os.Remove(s.Path)
 
 			cfg := Config{
-				Out:     os.Stdout,
-				Storage: s,
-				DictAPI: api,
+				Out:   os.Stdout,
+				Vocab: s,
+				Dict:  api,
 			}
 
 			cmd := NewRootCmd(&cfg)

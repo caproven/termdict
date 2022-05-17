@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/storage"
 	"github.com/caproven/termdict/vocab"
 )
 
@@ -20,21 +21,21 @@ func mockDictionaryAPI(data map[string]string) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
-func newTempStorage(init vocab.List) (vocab.Storage, error) {
+func newTempStorage(init vocab.List) (storage.VocabRepo, error) {
 	f, err := os.CreateTemp("", "")
 	if err != nil {
-		return vocab.Storage{}, err
+		return storage.VocabRepo{}, err
 	}
 	if err := f.Close(); err != nil {
-		return vocab.Storage{}, err
+		return storage.VocabRepo{}, err
 	}
 
-	s := vocab.Storage{
+	s := storage.VocabRepo{
 		Path: f.Name(),
 	}
 
 	if err := s.Save(init); err != nil {
-		return vocab.Storage{}, err
+		return storage.VocabRepo{}, err
 	}
 
 	return s, nil

@@ -27,41 +27,41 @@ func TestDefine(t *testing.T) {
 	cases := []struct {
 		name        string
 		word        string
-		entries     []Entry
+		defs        []Definition
 		errExpected bool
 	}{
 		{
 			name: "standard response",
 			word: "prickly",
-			entries: []Entry{
-				{PartOfSpeech: "noun", Definition: "Something that gives a pricking sensation; a sharp object."},
-				{PartOfSpeech: "adjective", Definition: "Covered with sharp points."},
-				{PartOfSpeech: "adjective", Definition: "Easily irritated."},
-				{PartOfSpeech: "adverb", Definition: "In a prickly manner."},
+			defs: []Definition{
+				{PartOfSpeech: "noun", Meaning: "Something that gives a pricking sensation; a sharp object."},
+				{PartOfSpeech: "adjective", Meaning: "Covered with sharp points."},
+				{PartOfSpeech: "adjective", Meaning: "Easily irritated."},
+				{PartOfSpeech: "adverb", Meaning: "In a prickly manner."},
 			},
 			errExpected: false,
 		},
 		{
 			name: "multiple definitions in array",
 			word: "snow",
-			entries: []Entry{
-				{PartOfSpeech: "noun", Definition: "The frozen, crystalline state of water that falls as precipitation."},
-				{PartOfSpeech: "noun", Definition: "A snowfall; a blanket of frozen, crystalline water."},
-				{PartOfSpeech: "noun", Definition: "A shade of the color white."},
-				{PartOfSpeech: "verb", Definition: "To have snow fall from the sky."},
+			defs: []Definition{
+				{PartOfSpeech: "noun", Meaning: "The frozen, crystalline state of water that falls as precipitation."},
+				{PartOfSpeech: "noun", Meaning: "A snowfall; a blanket of frozen, crystalline water."},
+				{PartOfSpeech: "noun", Meaning: "A shade of the color white."},
+				{PartOfSpeech: "verb", Meaning: "To have snow fall from the sky."},
 			},
 			errExpected: false,
 		},
 		{
 			name:        "word with no definition from api",
 			word:        "no_definitions",
-			entries:     nil,
+			defs:        nil,
 			errExpected: true,
 		},
 		{
 			name:        "word with empty response from api",
 			word:        "empty_response",
-			entries:     nil,
+			defs:        nil,
 			errExpected: true,
 		},
 	}
@@ -80,8 +80,8 @@ func TestDefine(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(got, test.entries) {
-				t.Errorf("got entries %v, expected %v", got, test.entries)
+			if !reflect.DeepEqual(got, test.defs) {
+				t.Errorf("got entries %v, expected %v", got, test.defs)
 			}
 		})
 	}

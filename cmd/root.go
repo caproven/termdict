@@ -4,15 +4,15 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/vocab"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
 // Config represents the CLI configuration
 type Config struct {
-	Out     io.Writer
-	Storage vocab.Storage
-	DictAPI dictionary.API
+	Out   io.Writer
+	Vocab storage.VocabRepo
+	Dict  dictionary.API
 }
 
 // NewRootCmd creates and returns an instance of the root command

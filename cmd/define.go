@@ -27,14 +27,14 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.word = args[0]
 
-			return o.run(cfg.Out, cfg.DictAPI)
+			return o.run(cfg.Out, cfg.Dict)
 		},
 	}
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer, api dictionary.API) error {
-	defs, err := api.Define(o.word)
+func (o *defineOptions) run(out io.Writer, d dictionary.API) error {
+	defs, err := d.Define(o.word)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/vocab"
+	"github.com/caproven/termdict/storage"
 )
 
 func TestDefineCmd(t *testing.T) {
@@ -40,9 +40,9 @@ func TestDefineCmd(t *testing.T) {
 			var b bytes.Buffer
 
 			cfg := Config{
-				Out:     &b,
-				Storage: vocab.Storage{}, // shouldn't be used by this cmd
-				DictAPI: api,
+				Out:   &b,
+				Vocab: storage.VocabRepo{}, // shouldn't be used by this cmd
+				Dict:  api,
 			}
 
 			cmd := NewRootCmd(&cfg)
