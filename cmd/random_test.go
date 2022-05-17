@@ -47,17 +47,22 @@ func TestRandomCmd(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newTempStorage(test.initList)
+			tempDir, err := os.MkdirTemp(os.TempDir(), "termdict-testadd")
 			if err != nil {
-				t.Errorf("failed to create temp storage: %v", err)
+				t.Fatalf("failed to create temp dir: %v", err)
 			}
-			defer os.Remove(s.Path)
+			defer os.RemoveAll(tempDir)
+
+			v, err := newTempVocab(tempDir, test.initList)
+			if err != nil {
+				t.Fatalf("failed to create initial vocab storage: %v", err)
+			}
 
 			var b bytes.Buffer
 
 			cfg := Config{
 				Out:   &b,
-				Vocab: s,
+				Vocab: v,
 				Dict:  api,
 			}
 

@@ -21,22 +21,18 @@ func mockDictionaryAPI(data map[string]string) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
-func newTempStorage(init vocab.List) (storage.VocabRepo, error) {
-	f, err := os.CreateTemp("", "")
+func newTempVocab(dir string, init vocab.List) (storage.VocabRepo, error) {
+	vocabFile, err := os.CreateTemp(dir, "vocab")
 	if err != nil {
 		return storage.VocabRepo{}, err
 	}
-	if err := f.Close(); err != nil {
+
+	v := storage.VocabRepo{
+		Path: vocabFile.Name(),
+	}
+	if err := v.Save(init); err != nil {
 		return storage.VocabRepo{}, err
 	}
 
-	s := storage.VocabRepo{
-		Path: f.Name(),
-	}
-
-	if err := s.Save(init); err != nil {
-		return storage.VocabRepo{}, err
-	}
-
-	return s, nil
+	return v, nil
 }
