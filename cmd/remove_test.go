@@ -78,7 +78,7 @@ func TestRemoveCmd(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			tempDir, err := os.MkdirTemp(os.TempDir(), "termdict-testadd")
+			tempDir, err := os.MkdirTemp(os.TempDir(), "termdict-testremove")
 			if err != nil {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
