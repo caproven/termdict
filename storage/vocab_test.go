@@ -8,7 +8,7 @@ import (
 	"github.com/caproven/termdict/vocab"
 )
 
-func TestLoad(t *testing.T) {
+func TestVocabRepo_Load(t *testing.T) {
 	cases := []struct {
 		name     string
 		input    string
@@ -67,7 +67,7 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-func TestSave(t *testing.T) {
+func TestVocabRepo_Save(t *testing.T) {
 	cases := []struct {
 		name     string
 		input    vocab.List

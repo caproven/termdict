@@ -36,3 +36,19 @@ func newTempVocab(dir string, init vocab.List) (storage.VocabRepo, error) {
 
 	return v, nil
 }
+
+func newTempCache(dir string, init dictionary.Cache) (storage.CacheRepo, error) {
+	cacheFile, err := os.CreateTemp(dir, "cache")
+	if err != nil {
+		return storage.CacheRepo{}, err
+	}
+
+	s := storage.CacheRepo{
+		Path: cacheFile.Name(),
+	}
+	if err := s.Save(init); err != nil {
+		return storage.CacheRepo{}, err
+	}
+
+	return s, nil
+}

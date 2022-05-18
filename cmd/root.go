@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Out   io.Writer
 	Vocab storage.VocabRepo
+	Cache storage.CacheRepo
 	Dict  dictionary.API
 }
 

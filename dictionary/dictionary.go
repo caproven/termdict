@@ -11,6 +11,9 @@ type Definition struct {
 	Meaning      string
 }
 
+// Cache is a cache of words and their definitions
+type Cache map[string][]Definition
+
 // String formats a word definition as a string
 func (def Definition) String() string {
 	return fmt.Sprintf("[%s] %s", def.PartOfSpeech, def.Meaning)

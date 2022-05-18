@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -27,16 +28,29 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.word = args[0]
 
-			return o.run(cfg.Out, cfg.Dict)
+			return o.run(cfg.Out, cfg.Cache, cfg.Dict)
 		},
 	}
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer, d dictionary.API) error {
-	defs, err := d.Define(o.word)
+func (o *defineOptions) run(out io.Writer, c storage.CacheRepo, d dictionary.API) error {
+	cache, err := c.Load()
 	if err != nil {
 		return err
+	}
+
+	defs, ok := cache[o.word]
+	if !ok {
+		defs, err = d.Define(o.word)
+		if err != nil {
+			return err
+		}
+
+		cache[o.word] = defs
+		if err := c.Save(cache); err != nil {
+			return err
+		}
 	}
 
 	dictionary.PrintDefinition(out, o.word, defs)

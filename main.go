@@ -17,11 +17,16 @@ func main() {
 		Path: storage.DefaultVocabFilepath(),
 	}
 
+	c := storage.CacheRepo{
+		Path: storage.DefaultCacheFilepath(),
+	}
+
 	api := dictionary.NewDefaultAPI()
 
 	cfg := &cmd.Config{
 		Out:   os.Stdout,
 		Vocab: v,
+		Cache: c,
 		Dict:  api,
 	}
 	if err := cmd.NewRootCmd(cfg).Execute(); err != nil {
