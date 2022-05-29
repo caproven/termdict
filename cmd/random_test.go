@@ -63,6 +63,7 @@ func TestRandomCmd(t *testing.T) {
 			cfg := Config{
 				Out:   &b,
 				Vocab: v,
+				Cache: newMemoryCache(nil),
 				Dict:  api,
 			}
 

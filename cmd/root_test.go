@@ -37,18 +37,33 @@ func newTempVocab(dir string, init vocab.List) (storage.VocabRepo, error) {
 	return v, nil
 }
 
-func newTempCache(dir string, init dictionary.Cache) (storage.CacheRepo, error) {
-	cacheFile, err := os.CreateTemp(dir, "cache")
-	if err != nil {
-		return storage.CacheRepo{}, err
-	}
+var _ storage.Cache = memoryCache{}
 
-	s := storage.CacheRepo{
-		Path: cacheFile.Name(),
-	}
-	if err := s.Save(init); err != nil {
-		return storage.CacheRepo{}, err
-	}
+type memoryCache struct {
+	data map[string][]dictionary.Definition
+}
 
-	return s, nil
+func newMemoryCache(data map[string][]dictionary.Definition) memoryCache {
+	if data == nil {
+		data = make(map[string][]dictionary.Definition)
+	}
+	return memoryCache{data: data}
+}
+
+func (mc memoryCache) Contains(word string) (bool, error) {
+	_, ok := mc.data[word]
+	return ok, nil
+}
+
+func (mc memoryCache) Save(word string, defs []dictionary.Definition) error {
+	mc.data[word] = defs
+	return nil
+}
+
+func (mc memoryCache) Lookup(word string) ([]dictionary.Definition, error) {
+	defs, ok := mc.data[word]
+	if !ok {
+		return nil, fmt.Errorf("word %s not found in cache", word)
+	}
+	return defs, nil
 }

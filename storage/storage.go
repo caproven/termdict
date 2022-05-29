@@ -9,7 +9,10 @@ const configSubdir string = "termdict"
 
 // CreateConfigDir creates a config directory for the application
 func CreateConfigDir() error {
-	return os.MkdirAll(defaultConfigDir(), os.ModePerm)
+	if err := os.MkdirAll(defaultConfigDir(), os.ModePerm); err != nil {
+		return err
+	}
+	return os.MkdirAll(DefaultCacheDir(), os.ModePerm)
 }
 
 func defaultConfigDir() string {
