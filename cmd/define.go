@@ -34,26 +34,38 @@ Sample usage:
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer, c storage.CacheRepo, d dictionary.API) error {
-	cache, err := c.Load()
+func (o *defineOptions) run(out io.Writer, c storage.Cache, d dictionary.API) error {
+	defs, err := defineWithCaching(o.word, c, d)
 	if err != nil {
 		return err
 	}
 
-	defs, ok := cache[o.word]
-	if !ok {
-		defs, err = d.Define(o.word)
+	dictionary.PrintDefinition(out, o.word, defs)
+	return nil
+}
+
+func defineWithCaching(word string, c storage.Cache, d dictionary.API) ([]dictionary.Definition, error) {
+	var defs []dictionary.Definition
+
+	hit, err := c.Contains(word)
+	if err != nil {
+		return nil, err
+	}
+	if hit {
+		defs, err = c.Lookup(word)
 		if err != nil {
-			return err
+			return nil, err
+		}
+	} else {
+		defs, err = d.Define(word)
+		if err != nil {
+			return nil, err
 		}
 
-		cache[o.word] = defs
-		if err := c.Save(cache); err != nil {
-			return err
+		if err := c.Save(word, defs); err != nil {
+			return nil, err
 		}
 	}
 
-	dictionary.PrintDefinition(out, o.word, defs)
-
-	return nil
+	return defs, nil
 }

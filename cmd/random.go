@@ -30,13 +30,13 @@ func NewRandomCommand(cfg *Config) *cobra.Command {
 Sample usage:
   termdict random`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.run(cfg.Out, cfg.Vocab, cfg.Dict)
+			return o.run(cfg.Out, cfg.Vocab, cfg.Cache, cfg.Dict)
 		},
 	}
 	return cmd
 }
 
-func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, d dictionary.API) error {
+func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, c storage.Cache, d dictionary.API) error {
 	vl, err := v.Load()
 	if err != nil {
 		return nil
@@ -49,12 +49,9 @@ func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, d dictionary.API
 
 	word := vl.Words[rand.Intn(len(vl.Words))]
 
-	defs, err := d.Define(word)
-	if err != nil {
-		return err
+	defOpts := defineOptions{
+		word: word,
 	}
 
-	dictionary.PrintDefinition(out, word, defs)
-
-	return nil
+	return defOpts.run(out, c, d)
 }

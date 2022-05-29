@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -25,58 +24,44 @@ func TestDefineCmd(t *testing.T) {
 	}
 
 	cases := []struct {
-		name          string
-		cmd           string
-		initCache     dictionary.Cache
-		expectedCache dictionary.Cache
-		expectedOut   string
-		errExpected   bool
+		name    string
+		cmd     string
+		cache   storage.Cache
+		word    string
+		wantOut string
+		wantErr bool
 	}{
 		{
-			name:      "word not in cache",
-			cmd:       "define kappa",
-			initCache: dictionary.Cache{},
-			expectedCache: dictionary.Cache{
-				"kappa": []dictionary.Definition{
-					{
-						PartOfSpeech: "noun",
-						Meaning:      "A tortoise-like creature in the Japanese mythology.",
-					},
-				},
-			},
-			expectedOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
-			errExpected: false,
+			name:    "word found but not in cache",
+			cmd:     "define kappa",
+			cache:   newMemoryCache(nil),
+			word:    "kappa",
+			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
 		},
 		{
-			name:          "word not found",
-			cmd:           "define asdf",
-			initCache:     dictionary.Cache{},
-			expectedCache: dictionary.Cache{},
-			errExpected:   true,
+			name: "word found and in cache",
+			cmd:  "define kappa",
+			cache: newMemoryCache(map[string][]dictionary.Definition{
+				"kappa": {{PartOfSpeech: "noun", Meaning: "cache-specific meaning"}},
+			}),
+			word:    "kappa",
+			wantOut: "kappa\n[noun] cache-specific meaning\n",
 		},
 		{
-			name: "word in cache",
-			cmd:  "define cucumber",
-			initCache: dictionary.Cache{
-				"cucumber": []dictionary.Definition{
-					{
-						PartOfSpeech: "noun",
-						// different from mock word definition(s), test that cache value
-						// is used and not modified
-						Meaning: "Custom meaning",
-					},
-				},
-			},
-			expectedCache: dictionary.Cache{
-				"cucumber": []dictionary.Definition{
-					{
-						PartOfSpeech: "noun",
-						Meaning:      "Custom meaning",
-					},
-				},
-			},
-			expectedOut: "cucumber\n[noun] Custom meaning\n",
-			errExpected: false,
+			name:    "word not found and not in cache",
+			cmd:     "define asdf",
+			cache:   newMemoryCache(nil),
+			word:    "asdf",
+			wantErr: true,
+		},
+		{
+			name: "word not found but in cache",
+			cmd:  "define sponge",
+			cache: newMemoryCache(map[string][]dictionary.Definition{
+				"sponge": {{PartOfSpeech: "noun", Meaning: "A piece of porous material used for washing"}},
+			}),
+			word:    "sponge",
+			wantOut: "sponge\n[noun] A piece of porous material used for washing\n",
 		},
 	}
 
@@ -90,15 +75,10 @@ func TestDefineCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tempDir)
 
-			c, err := newTempCache(tempDir, test.initCache)
-			if err != nil {
-				t.Fatalf("failed to create initial vocab storage: %v", err)
-			}
-
 			cfg := Config{
 				Out:   &b,
 				Vocab: storage.VocabRepo{}, // shouldn't be used by this cmd
-				Cache: c,
+				Cache: test.cache,
 				Dict:  api,
 			}
 
@@ -106,29 +86,22 @@ func TestDefineCmd(t *testing.T) {
 			cmd.SetArgs(strings.Split(test.cmd, " "))
 
 			err = cmd.Execute()
-			out := b.String()
+			gotOut := b.String()
 
-			if test.errExpected {
-				if err == nil {
-					t.Error("expected err but didn't get one")
+			if err != nil {
+				if (err != nil) != test.wantErr {
+					t.Errorf("define cmd error = %v, wantErr %v", err, test.wantErr)
 				}
 				return
 			}
 
-			if out != test.expectedOut {
-				t.Errorf("got %v, expected %v", out, test.expectedOut)
+			if gotOut != test.wantOut {
+				t.Errorf("got %v, expected %v", gotOut, test.wantOut)
 			}
 
-			if err != nil {
-				t.Errorf("didn't expect err but got: %v", err)
-			}
-
-			gotCache, err := c.Load()
-			if err != nil {
-				t.Errorf("failed to load storage after executing command: %v", err)
-			}
-			if !reflect.DeepEqual(gotCache, test.expectedCache) {
-				t.Errorf("got %v, expected %v", gotCache, test.expectedCache)
+			found, _ := test.cache.Contains(test.word)
+			if !found {
+				t.Errorf("cache did not contain defined word %s", test.word)
 			}
 		})
 	}

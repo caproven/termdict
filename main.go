@@ -17,8 +17,8 @@ func main() {
 		Path: storage.DefaultVocabFilepath(),
 	}
 
-	c := storage.CacheRepo{
-		Path: storage.DefaultCacheFilepath(),
+	c := storage.FileCache{
+		DirPath: storage.DefaultCacheDir(),
 	}
 
 	api := dictionary.NewDefaultAPI()

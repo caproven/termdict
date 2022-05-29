@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,49 +11,72 @@ import (
 	"github.com/caproven/termdict/dictionary"
 )
 
-const cacheFile string = "cache.json"
+const cacheDir string = "cache"
 
-// CacheRepo lets you fetch or save a dictionary cache
-type CacheRepo struct {
-	Path string
+var _ Cache = FileCache{}
+
+// Cache for word definitions
+type Cache interface {
+	Contains(word string) (bool, error)
+	Save(word string, defs []dictionary.Definition) error
+	Lookup(word string) ([]dictionary.Definition, error)
 }
 
-// Load a dictionary cache from storage
-func (c CacheRepo) Load() (dictionary.Cache, error) {
-	if _, err := os.Stat(c.Path); err != nil {
+// DefaultCacheDir returns the default subdirectory where
+// the dictionary cache may be stored
+func DefaultCacheDir() string {
+	return filepath.Join(defaultConfigDir(), cacheDir)
+}
+
+// FileCache stores word definitions on the filesystem
+type FileCache struct {
+	DirPath string
+}
+
+// Contains checks if a word is in the cache
+func (fc FileCache) Contains(word string) (bool, error) {
+	path := fc.fileForWord(word)
+
+	if _, err := os.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			// file doesn't exist, just return empty map
-			return make(dictionary.Cache), nil
+			return false, nil
 		}
-		return nil, err
+		return false, err
 	}
 
-	data, err := os.ReadFile(c.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	var cache dictionary.Cache
-
-	if err := json.Unmarshal(data, &cache); err != nil {
-		return nil, err
-	}
-
-	return cache, nil
+	return true, nil
 }
 
-// Save a dictionary cache to storage
-func (c CacheRepo) Save(cache dictionary.Cache) error {
-	data, err := json.Marshal(cache)
+// Save a word to the cache
+func (fc FileCache) Save(word string, defs []dictionary.Definition) error {
+	data, err := json.Marshal(defs)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(c.Path, data, os.ModePerm)
+	path := fc.fileForWord(word)
+
+	return os.WriteFile(path, data, os.ModePerm)
 }
 
-// DefaultCacheFilepath returns the default filepath for where
-// the dictionary cache may be stored on the filesystem
-func DefaultCacheFilepath() string {
-	return filepath.Join(defaultConfigDir(), cacheFile)
+// Lookup the definitions for a word in the cache
+func (fc FileCache) Lookup(word string) ([]dictionary.Definition, error) {
+	path := fc.fileForWord(word)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var defs []dictionary.Definition
+
+	if err := json.Unmarshal(data, &defs); err != nil {
+		return nil, err
+	}
+
+	return defs, nil
+}
+
+func (fc FileCache) fileForWord(word string) string {
+	return fmt.Sprintf("%s/%s.json", fc.DirPath, word)
 }
