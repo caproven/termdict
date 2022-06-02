@@ -233,7 +233,10 @@ func TestFileCache_Lookup(t *testing.T) {
 			DirPath: tempDir,
 		}
 
-		os.WriteFile(fc.fileForWord("mouse"), []byte("invalid_data"), os.ModePerm)
+		err = os.WriteFile(fc.fileForWord("mouse"), []byte("invalid_data"), os.ModePerm)
+		if err != nil {
+			t.Errorf("failed to write temp file: %v", err)
+		}
 
 		_, err = fc.Lookup("mouse")
 		if err == nil {
