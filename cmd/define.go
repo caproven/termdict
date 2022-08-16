@@ -9,7 +9,8 @@ import (
 )
 
 type defineOptions struct {
-	word string
+	word  string
+	limit int
 }
 
 // NewDefineCommand constructs the define command
@@ -31,6 +32,9 @@ Sample usage:
 			return o.run(cfg.Out, cfg.Cache, cfg.Dict)
 		},
 	}
+
+	cmd.Flags().IntVar(&o.limit, "limit", 0, "limit the number of entries to display")
+
 	return cmd
 }
 
@@ -40,7 +44,7 @@ func (o *defineOptions) run(out io.Writer, c storage.Cache, d dictionary.API) er
 		return err
 	}
 
-	dictionary.PrintDefinition(out, o.word, defs)
+	dictionary.PrintDefinition(out, o.word, defs, o.limit)
 	return nil
 }
 

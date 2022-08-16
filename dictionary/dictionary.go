@@ -16,10 +16,17 @@ func (def Definition) String() string {
 	return fmt.Sprintf("[%s] %s", def.PartOfSpeech, def.Meaning)
 }
 
-// PrintDefinition neatly prints a word along with its definitions
-func PrintDefinition(w io.Writer, word string, defs []Definition) {
+// PrintDefinition neatly prints a word along with its definitions. Allows limiting
+// of definitions printed if limit > 0
+func PrintDefinition(w io.Writer, word string, defs []Definition, limit int) {
 	fmt.Fprintln(w, word)
-	for _, def := range defs {
+	if limit <= 0 {
+		limit = len(defs)
+	}
+	for i, def := range defs {
+		if i >= limit {
+			break
+		}
 		fmt.Fprintln(w, def)
 	}
 }

@@ -16,6 +16,7 @@ func init() {
 }
 
 type randomOptions struct {
+	limit int
 }
 
 // NewRandomCommand constructs the random command
@@ -33,6 +34,9 @@ Sample usage:
 			return o.run(cfg.Out, cfg.Vocab, cfg.Cache, cfg.Dict)
 		},
 	}
+
+	cmd.Flags().IntVar(&o.limit, "limit", 0, "limit the number of entries to display")
+
 	return cmd
 }
 
@@ -50,7 +54,8 @@ func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, c storage.Cache,
 	word := vl.Words[rand.Intn(len(vl.Words))]
 
 	defOpts := defineOptions{
-		word: word,
+		word:  word,
+		limit: o.limit,
 	}
 
 	return defOpts.run(out, c, d)

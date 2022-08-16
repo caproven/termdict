@@ -63,6 +63,20 @@ func TestDefineCmd(t *testing.T) {
 			word:    "sponge",
 			wantOut: "sponge\n[noun] A piece of porous material used for washing\n",
 		},
+		{
+			name:    "valid definitions limit",
+			cmd:     "define cucumber --limit 1",
+			cache:   newMemoryCache(nil),
+			word:    "cucumber",
+			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n",
+		},
+		{
+			name:    "ignored definitions limit",
+			cmd:     "define cucumber --limit 0",
+			cache:   newMemoryCache(nil),
+			word:    "cucumber",
+			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n[noun] The edible fruit of this plant, having a green rind and crisp white flesh.\n",
+		},
 	}
 
 	for _, test := range cases {
