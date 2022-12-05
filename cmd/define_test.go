@@ -11,16 +11,14 @@ import (
 )
 
 func TestDefineCmd(t *testing.T) {
-	mockWords := map[string]string{
-		"kappa":    `[{"word":"kappa","phonetic":"/ˈkæpə/","phonetics":[{"text":"/ˈkæpə/","audio":"https://api.dictionaryapi.dev/media/pronunciations/en/kappa-us.mp3","sourceUrl":"https://commons.wikimedia.org/w/index.php?curid=311306"}],"meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"A tortoise-like creature in the Japanese mythology.","synonyms":[],"antonyms":[]}],"synonyms":[],"antonyms":[]}],"license":{"name":"CC BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"},"sourceUrls":["https://en.wiktionary.org/wiki/kappa"]}]`,
-		"cucumber": `[{"word":"cucumber","phonetic":"/ˈkjuːˌkʌmbə/","phonetics":[{"text":"/ˈkjuːˌkʌmbə/","audio":""},{"text":"/ˈkjuːˌkʌmbɚ/","audio":"https://api.dictionaryapi.dev/media/pronunciations/en/cucumber-us.mp3","sourceUrl":"https://commons.wikimedia.org/w/index.php?curid=1769363","license":{"name":"BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"}}],"meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"A vine in the gourd family, Cucumis sativus.","synonyms":[],"antonyms":[]},{"definition":"The edible fruit of this plant, having a green rind and crisp white flesh.","synonyms":[],"antonyms":[]}],"synonyms":["cuke"],"antonyms":[]}],"license":{"name":"CC BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"},"sourceUrls":["https://en.wiktionary.org/wiki/cucumber"]}]`,
-	}
-
-	apiServer := mockDictionaryAPI(mockWords)
-	defer apiServer.Close()
-
-	api := dictionary.API{
-		URL: apiServer.URL,
+	dict := memoryDefiner{
+		"kappa": []dictionary.Definition{
+			{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology."},
+		},
+		"cucumber": []dictionary.Definition{
+			{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus."},
+			{PartOfSpeech: "noun", Meaning: "The edible fruit of this plant, having a green rind and crisp white flesh."},
+		},
 	}
 
 	cases := []struct {
@@ -93,7 +91,7 @@ func TestDefineCmd(t *testing.T) {
 				Out:   &b,
 				Vocab: storage.VocabRepo{}, // shouldn't be used by this cmd
 				Cache: test.cache,
-				Dict:  api,
+				Dict:  dict,
 			}
 
 			cmd := NewRootCmd(&cfg)

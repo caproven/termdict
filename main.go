@@ -21,7 +21,7 @@ func main() {
 		DirPath: storage.DefaultCacheDir(),
 	}
 
-	api := dictionary.NewDefaultAPI()
+	api := dictionary.NewDefaultWebAPI()
 
 	cfg := &cmd.Config{
 		Out:   os.Stdout,

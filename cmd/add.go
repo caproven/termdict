@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +39,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *addOptions) run(out io.Writer, v storage.VocabRepo, d dictionary.API) error {
+func (o *addOptions) run(out io.Writer, v storage.VocabRepo, d Definer) error {
 	vl, err := v.Load()
 	if err != nil {
 		return err

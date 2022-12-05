@@ -4,49 +4,50 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
-// DefaultURL is the default URL for the dictionary API
-const DefaultURL string = "https://api.dictionaryapi.dev"
+// defaultURL is the default API's URL
+const defaultURL string = "https://api.dictionaryapi.dev"
 
-// EndpointPath is the endpoint of the dictionary API used
-// for defining words
-const EndpointPath string = "/api/v2/entries/en/"
+// defaultEndpoint is the API's endpoint for defining words
+const defaultEndpoint string = "/api/v2/entries/en/"
 
-// APIResponse is the dictionary API response
-type APIResponse struct {
-	Meanings []APIMeanings
+// apiResponse is the dictionary API response
+type apiResponse struct {
+	Meanings []apiMeanings
 }
 
-// APIMeanings is a series of definitions broken up
+// apiMeanings is a series of definitions broken up
 // by a specific part of speech
-type APIMeanings struct {
+type apiMeanings struct {
 	PartOfSpeech string
-	Definitions  []APIDefinition
+	Definitions  []apiDefinition
 }
 
-// APIDefinition is a single definition for a word
-type APIDefinition struct {
+// apiDefinition is a single definition for a word
+type apiDefinition struct {
 	Definition string
 }
 
-// API lets you interact with a dictionary API
-type API struct {
-	URL string
+// WebAPI lets you interact with a dictionary API
+type WebAPI struct {
+	url string
+	// Word to define should be appended to the end
+	endpoint string
 }
 
-// NewDefaultAPI creates a new instance for connecting to a dictionary API
-func NewDefaultAPI() API {
-	return API{
-		URL: DefaultURL,
+// NewDefaultWebAPI creates a new instance for connecting to a dictionary API
+func NewDefaultWebAPI() WebAPI {
+	return WebAPI{
+		url:      defaultURL,
+		endpoint: defaultEndpoint,
 	}
 }
 
-// Define defines a word
-func (d API) Define(word string) ([]Definition, error) {
-	apiResp, err := d.query(word)
+func (api WebAPI) Define(word string) ([]Definition, error) {
+	apiResp, err := api.query(word)
 	if err != nil {
 		return nil, fmt.Errorf("failed to define word '%s'", word)
 	}
@@ -66,24 +67,24 @@ func (d API) Define(word string) ([]Definition, error) {
 	return defs, nil
 }
 
-func (d API) query(w string) (APIResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s%s%s", d.URL, EndpointPath, w))
+func (api WebAPI) query(w string) (apiResponse, error) {
+	resp, err := http.Get(fmt.Sprintf("%s%s%s", api.url, api.endpoint, w))
 	if err != nil {
-		return APIResponse{}, err
+		return apiResponse{}, err
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return APIResponse{}, err
+		return apiResponse{}, err
 	}
 
-	var responses []APIResponse
+	var responses []apiResponse
 	if err := json.Unmarshal(body, &responses); err != nil {
-		return APIResponse{}, err
+		return apiResponse{}, err
 	}
 	if len(responses) == 0 {
-		return APIResponse{}, errors.New("didn't find any definitions")
+		return apiResponse{}, errors.New("didn't find any definitions")
 	}
 	return responses[0], err
 }

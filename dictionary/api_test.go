@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+const defineEndpoint string = "/define/"
+
 func TestDefine(t *testing.T) {
 	mockWords := map[string]string{
 		"prickly":        `[{"word":"prickly","phonetics":[{"audio":"https://api.dictionaryapi.dev/media/pronunciations/en/prickly.mp3","sourceUrl":"https://commons.wikimedia.org/w/index.php?curid=77605874","license":{"name":"BY-SA 4.0","url":"https://creativecommons.org/licenses/by-sa/4.0"}}],"meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"Something that gives a pricking sensation; a sharp object.","synonyms":[],"antonyms":[]}],"synonyms":[],"antonyms":[]},{"partOfSpeech":"adjective","definitions":[{"definition":"Covered with sharp points.","synonyms":[],"antonyms":[],"example":"The prickly pear is a cactus; you have to peel it before eating it to remove the spines and the tough skin."},{"definition":"Easily irritated.","synonyms":[],"antonyms":[],"example":"He has a prickly personality. He doesn't get along with people because he is easily set off."}],"synonyms":["spiny","thorny"],"antonyms":[]},{"partOfSpeech":"adverb","definitions":[{"definition":"In a prickly manner.","synonyms":[],"antonyms":[]}],"synonyms":[],"antonyms":[]}],"license":{"name":"CC BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"},"sourceUrls":["https://en.wiktionary.org/wiki/prickly"]}]`,
@@ -17,11 +19,12 @@ func TestDefine(t *testing.T) {
 		"empty_response": `[]`,
 	}
 
-	apiServer := mockDictionaryAPI(mockWords)
+	apiServer := mockAPIServer(mockWords, defineEndpoint)
 	defer apiServer.Close()
 
-	api := API{
-		URL: apiServer.URL,
+	api := WebAPI{
+		url:      apiServer.URL,
+		endpoint: defineEndpoint,
 	}
 
 	cases := []struct {
@@ -87,10 +90,10 @@ func TestDefine(t *testing.T) {
 	}
 }
 
-func mockDictionaryAPI(data map[string]string) *httptest.Server {
+func mockAPIServer(data map[string]string, endpoint string) *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc(EndpointPath, func(w http.ResponseWriter, r *http.Request) {
-		word := strings.TrimPrefix(r.URL.Path, EndpointPath)
+	mux.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		word := strings.TrimPrefix(r.URL.Path, endpoint)
 		fmt.Fprintf(w, data[word])
 	})
 	return httptest.NewServer(mux)

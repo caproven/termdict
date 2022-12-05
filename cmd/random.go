@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +39,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, c storage.Cache, d dictionary.API) error {
+func (o *randomOptions) run(out io.Writer, v storage.VocabRepo, c storage.Cache, d Definer) error {
 	vl, err := v.Load()
 	if err != nil {
 		return nil

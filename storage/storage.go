@@ -16,6 +16,9 @@ func CreateConfigDir() error {
 }
 
 func defaultConfigDir() string {
-	configDir, _ := os.UserConfigDir()
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		panic(err)
+	}
 	return filepath.Join(configDir, configSubdir)
 }

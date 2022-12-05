@@ -2,23 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strings"
 
 	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/storage"
 	"github.com/caproven/termdict/vocab"
 )
 
-func mockDictionaryAPI(data map[string]string) *httptest.Server {
-	mux := http.NewServeMux()
-	mux.HandleFunc(dictionary.EndpointPath, func(w http.ResponseWriter, r *http.Request) {
-		word := strings.TrimPrefix(r.URL.Path, dictionary.EndpointPath)
-		fmt.Fprintf(w, data[word])
-	})
-	return httptest.NewServer(mux)
+type memoryDefiner map[string][]dictionary.Definition
+
+func (m memoryDefiner) Define(word string) ([]dictionary.Definition, error) {
+	defs, ok := m[word]
+	if !ok {
+		return nil, fmt.Errorf("word '%s' not found", word)
+	}
+	return defs, nil
 }
 
 func newTempVocab(dir string, init vocab.List) (storage.VocabRepo, error) {

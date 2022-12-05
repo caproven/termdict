@@ -6,18 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/vocab"
 )
 
 func TestRemoveCmd(t *testing.T) {
-	apiServer := mockDictionaryAPI(map[string]string{})
-	defer apiServer.Close()
-
-	api := dictionary.API{
-		URL: apiServer.URL,
-	}
-
 	cases := []struct {
 		name         string
 		cmd          string
@@ -92,7 +84,7 @@ func TestRemoveCmd(t *testing.T) {
 			cfg := Config{
 				Out:   os.Stdout,
 				Vocab: v,
-				Dict:  api,
+				Dict:  memoryDefiner{},
 			}
 
 			cmd := NewRootCmd(&cfg)

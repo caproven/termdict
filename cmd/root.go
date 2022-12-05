@@ -13,7 +13,11 @@ type Config struct {
 	Out   io.Writer
 	Vocab storage.VocabRepo
 	Cache storage.Cache
-	Dict  dictionary.API
+	Dict  Definer
+}
+
+type Definer interface {
+	Define(word string) ([]dictionary.Definition, error)
 }
 
 // NewRootCmd creates and returns an instance of the root command

@@ -11,16 +11,15 @@ import (
 )
 
 func TestRandomCmd(t *testing.T) {
-	mockWords := map[string]string{
-		"kappa":      `[{"word":"kappa","phonetic":"/ˈkæpə/","phonetics":[{"text":"/ˈkæpə/","audio":"https://api.dictionaryapi.dev/media/pronunciations/en/kappa-us.mp3","sourceUrl":"https://commons.wikimedia.org/w/index.php?curid=311306"}],"meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"A tortoise-like creature in the Japanese mythology.","synonyms":[],"antonyms":[]}],"synonyms":[],"antonyms":[]}],"license":{"name":"CC BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"},"sourceUrls":["https://en.wiktionary.org/wiki/kappa"]}]`,
-		"senescence": `[{"word":"senescence","phonetic":"/sɨnˈɛsəns/","meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"definition 1","synonyms":[],"antonyms":[]},{"definition":"definition 2","synonyms":[],"antonyms":[]},{"definition":"definition 3","synonyms":[],"antonyms":[]}]}],"license":{"name":"CC BY-SA 3.0","url":"https://creativecommons.org/licenses/by-sa/3.0"},"sourceUrls":["https://en.wiktionary.org/wiki/senescence"]}]`,
-	}
-
-	apiServer := mockDictionaryAPI(mockWords)
-	defer apiServer.Close()
-
-	api := dictionary.API{
-		URL: apiServer.URL,
+	dict := memoryDefiner{
+		"kappa": []dictionary.Definition{
+			{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology."},
+		},
+		"senescence": []dictionary.Definition{
+			{PartOfSpeech: "noun", Meaning: "definition 1"},
+			{PartOfSpeech: "adjective", Meaning: "definition 2"},
+			{PartOfSpeech: "verb", Meaning: "definition 3"},
+		},
 	}
 
 	cases := []struct {
@@ -48,14 +47,14 @@ func TestRandomCmd(t *testing.T) {
 			name:        "valid definitions limit",
 			cmd:         "random --limit 2",
 			initList:    vocab.List{Words: []string{"senescence"}},
-			expectedOut: "senescence\n[noun] definition 1\n[noun] definition 2\n",
+			expectedOut: "senescence\n[noun] definition 1\n[adjective] definition 2\n",
 			errExpected: false,
 		},
 		{
 			name:        "ignored definitions limit",
 			cmd:         "random",
 			initList:    vocab.List{Words: []string{"senescence"}},
-			expectedOut: "senescence\n[noun] definition 1\n[noun] definition 2\n[noun] definition 3\n",
+			expectedOut: "senescence\n[noun] definition 1\n[adjective] definition 2\n[verb] definition 3\n",
 			errExpected: false,
 		},
 	}
@@ -79,7 +78,7 @@ func TestRandomCmd(t *testing.T) {
 				Out:   &b,
 				Vocab: v,
 				Cache: newMemoryCache(nil),
-				Dict:  api,
+				Dict:  dict,
 			}
 
 			cmd := NewRootCmd(&cfg)
