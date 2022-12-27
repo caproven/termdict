@@ -63,7 +63,7 @@ func TestFileCache_Contains(t *testing.T) {
 			defer os.RemoveAll(tempDir)
 
 			fc := FileCache{
-				DirPath: tempDir,
+				dirPath: tempDir,
 			}
 
 			if err := writeCache(tt.cache, fc); err != nil {
@@ -134,7 +134,7 @@ func TestFileCache_Save(t *testing.T) {
 			defer os.RemoveAll(tempDir)
 
 			fc := FileCache{
-				DirPath: tempDir,
+				dirPath: tempDir,
 			}
 
 			if err := writeCache(tt.cache, fc); err != nil {
@@ -204,7 +204,7 @@ func TestFileCache_Lookup(t *testing.T) {
 			defer os.RemoveAll(tempDir)
 
 			fc := FileCache{
-				DirPath: tempDir,
+				dirPath: tempDir,
 			}
 
 			if err := writeCache(tt.cache, fc); err != nil {
@@ -230,7 +230,7 @@ func TestFileCache_Lookup(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		fc := FileCache{
-			DirPath: tempDir,
+			dirPath: tempDir,
 		}
 
 		err = os.WriteFile(fc.fileForWord("mouse"), []byte("invalid_data"), os.ModePerm)
@@ -245,7 +245,7 @@ func TestFileCache_Lookup(t *testing.T) {
 	})
 }
 
-func writeCache(cache map[string][]dictionary.Definition, c Cache) error {
+func writeCache(cache map[string][]dictionary.Definition, c FileCache) error {
 	for word, defs := range cache {
 		if err := c.Save(word, defs); err != nil {
 			return err

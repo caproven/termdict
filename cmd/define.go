@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +37,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer, c storage.Cache, d Definer) error {
+func (o *defineOptions) run(out io.Writer, c Cache, d Definer) error {
 	defs, err := defineWithCaching(o.word, c, d)
 	if err != nil {
 		return err
@@ -48,7 +47,7 @@ func (o *defineOptions) run(out io.Writer, c storage.Cache, d Definer) error {
 	return nil
 }
 
-func defineWithCaching(word string, c storage.Cache, d Definer) ([]dictionary.Definition, error) {
+func defineWithCaching(word string, c Cache, d Definer) ([]dictionary.Definition, error) {
 	var defs []dictionary.Definition
 
 	hit, err := c.Contains(word)

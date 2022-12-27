@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/storage"
 )
 
 func TestDefineCmd(t *testing.T) {
@@ -24,7 +22,7 @@ func TestDefineCmd(t *testing.T) {
 	cases := []struct {
 		name    string
 		cmd     string
-		cache   storage.Cache
+		cache   Cache
 		word    string
 		wantOut string
 		wantErr bool
@@ -81,15 +79,9 @@ func TestDefineCmd(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var b bytes.Buffer
 
-			tempDir, err := os.MkdirTemp(os.TempDir(), "termdict-testdefine")
-			if err != nil {
-				t.Fatalf("failed to create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tempDir)
-
 			cfg := Config{
 				Out:   &b,
-				Vocab: storage.VocabRepo{}, // shouldn't be used by this cmd
+				Vocab: nil, // shouldn't be used by this cmd
 				Cache: test.cache,
 				Dict:  dict,
 			}
@@ -97,7 +89,7 @@ func TestDefineCmd(t *testing.T) {
 			cmd := NewRootCmd(&cfg)
 			cmd.SetArgs(strings.Split(test.cmd, " "))
 
-			err = cmd.Execute()
+			err := cmd.Execute()
 			gotOut := b.String()
 
 			if err != nil {

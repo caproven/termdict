@@ -39,8 +39,8 @@ func TestVocabRepo_Load(t *testing.T) {
 			}
 			defer os.Remove(fName)
 
-			s := VocabRepo{
-				Path: fName,
+			s := FileVocabRepo{
+				path: fName,
 			}
 
 			got, err := s.Load()
@@ -53,8 +53,8 @@ func TestVocabRepo_Load(t *testing.T) {
 	}
 
 	t.Run("file doesn't exist", func(t *testing.T) {
-		s := VocabRepo{
-			Path: filepath.Join(os.TempDir(), "thisfileshouldntexist"),
+		s := FileVocabRepo{
+			path: filepath.Join(os.TempDir(), "thisfileshouldntexist"),
 		}
 
 		got, err := s.Load()
@@ -98,8 +98,8 @@ func TestVocabRepo_Save(t *testing.T) {
 			}
 			defer os.Remove(fName)
 
-			s := VocabRepo{
-				Path: fName,
+			s := FileVocabRepo{
+				path: fName,
 			}
 
 			err = s.Save(test.input)
@@ -107,7 +107,7 @@ func TestVocabRepo_Save(t *testing.T) {
 				t.Errorf("failed to save to storage: %v", err)
 			}
 
-			got, err := os.ReadFile(s.Path)
+			got, err := os.ReadFile(s.path)
 			if err != nil {
 				t.Errorf("failed to read from storage: %v", err)
 			}

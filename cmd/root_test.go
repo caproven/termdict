@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/storage"
 	"github.com/caproven/termdict/vocab"
 )
 
@@ -19,23 +17,24 @@ func (m memoryDefiner) Define(word string) ([]dictionary.Definition, error) {
 	return defs, nil
 }
 
-func newTempVocab(dir string, init vocab.List) (storage.VocabRepo, error) {
-	vocabFile, err := os.CreateTemp(dir, "vocab")
-	if err != nil {
-		return storage.VocabRepo{}, err
-	}
-
-	v := storage.VocabRepo{
-		Path: vocabFile.Name(),
-	}
-	if err := v.Save(init); err != nil {
-		return storage.VocabRepo{}, err
-	}
-
-	return v, nil
+type memoryVocabRepo struct {
+	list vocab.List
 }
 
-var _ storage.Cache = memoryCache{}
+func newMemoryVocabRepo(init vocab.List) *memoryVocabRepo {
+	return &memoryVocabRepo{list: init}
+}
+
+func (mvr *memoryVocabRepo) Load() (vocab.List, error) {
+	list := vocab.List{Words: []string{}}
+	list.Words = append(list.Words, mvr.list.Words...)
+	return list, nil
+}
+
+func (mvr *memoryVocabRepo) Save(vl vocab.List) error {
+	mvr.list = vl
+	return nil
+}
 
 type memoryCache struct {
 	data map[string][]dictionary.Definition

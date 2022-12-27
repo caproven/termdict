@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/caproven/termdict/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +28,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *listOptions) run(out io.Writer, v storage.VocabRepo) error {
+func (o *listOptions) run(out io.Writer, v VocabRepo) error {
 	vl, err := v.Load()
 	if err != nil {
 		return err

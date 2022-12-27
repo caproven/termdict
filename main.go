@@ -13,13 +13,9 @@ func main() {
 		panic(err)
 	}
 
-	v := storage.VocabRepo{
-		Path: storage.DefaultVocabFilepath(),
-	}
+	v := storage.NewDefaultVocabRepo()
 
-	c := storage.FileCache{
-		DirPath: storage.DefaultCacheDir(),
-	}
+	c := storage.NewDefaultFSCache()
 
 	api := dictionary.NewDefaultWebAPI()
 

@@ -13,24 +13,21 @@ import (
 
 const cacheDir string = "cache"
 
-var _ Cache = FileCache{}
-
-// Cache for word definitions
-type Cache interface {
-	Contains(word string) (bool, error)
-	Save(word string, defs []dictionary.Definition) error
-	Lookup(word string) ([]dictionary.Definition, error)
-}
-
-// DefaultCacheDir returns the default subdirectory where
+// defaultCacheDir returns the default subdirectory where
 // the dictionary cache may be stored
-func DefaultCacheDir() string {
+func defaultCacheDir() string {
 	return filepath.Join(defaultConfigDir(), cacheDir)
 }
 
 // FileCache stores word definitions on the filesystem
 type FileCache struct {
-	DirPath string
+	dirPath string
+}
+
+func NewDefaultFSCache() FileCache {
+	return FileCache{
+		dirPath: defaultCacheDir(),
+	}
 }
 
 // Contains checks if a word is in the cache
@@ -78,5 +75,5 @@ func (fc FileCache) Lookup(word string) ([]dictionary.Definition, error) {
 }
 
 func (fc FileCache) fileForWord(word string) string {
-	return fmt.Sprintf("%s/%s.json", fc.DirPath, word)
+	return fmt.Sprintf("%s/%s.json", fc.dirPath, word)
 }

@@ -12,7 +12,7 @@ func CreateConfigDir() error {
 	if err := os.MkdirAll(defaultConfigDir(), os.ModePerm); err != nil {
 		return err
 	}
-	return os.MkdirAll(DefaultCacheDir(), os.ModePerm)
+	return os.MkdirAll(defaultCacheDir(), os.ModePerm)
 }
 
 func defaultConfigDir() string {

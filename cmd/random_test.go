@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 
@@ -61,16 +60,7 @@ func TestRandomCmd(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			tempDir, err := os.MkdirTemp(os.TempDir(), "termdict-testrandom")
-			if err != nil {
-				t.Fatalf("failed to create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tempDir)
-
-			v, err := newTempVocab(tempDir, test.initList)
-			if err != nil {
-				t.Fatalf("failed to create initial vocab storage: %v", err)
-			}
+			v := newMemoryVocabRepo(test.initList)
 
 			var b bytes.Buffer
 
@@ -84,7 +74,7 @@ func TestRandomCmd(t *testing.T) {
 			cmd := NewRootCmd(&cfg)
 			cmd.SetArgs(strings.Split(test.cmd, " "))
 
-			err = cmd.Execute()
+			err := cmd.Execute()
 			out := b.String()
 
 			if test.errExpected {
