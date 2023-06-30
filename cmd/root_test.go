@@ -35,32 +35,3 @@ func (mvr *memoryVocabRepo) Save(vl vocab.List) error {
 	mvr.list = vl
 	return nil
 }
-
-type memoryCache struct {
-	data map[string][]dictionary.Definition
-}
-
-func newMemoryCache(data map[string][]dictionary.Definition) memoryCache {
-	if data == nil {
-		data = make(map[string][]dictionary.Definition)
-	}
-	return memoryCache{data: data}
-}
-
-func (mc memoryCache) Contains(word string) (bool, error) {
-	_, ok := mc.data[word]
-	return ok, nil
-}
-
-func (mc memoryCache) Save(word string, defs []dictionary.Definition) error {
-	mc.data[word] = defs
-	return nil
-}
-
-func (mc memoryCache) Lookup(word string) ([]dictionary.Definition, error) {
-	defs, ok := mc.data[word]
-	if !ok {
-		return nil, fmt.Errorf("word %s not found in cache", word)
-	}
-	return defs, nil
-}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/caproven/termdict/config"
 	"github.com/caproven/termdict/vocab"
 )
 
@@ -54,11 +55,15 @@ func (r FileVocabRepo) Save(vl vocab.List) error {
 // defaultVocabFilepath returns the default filepath for where
 // the vocab list may be stored on the filesystem
 func defaultVocabFilepath() string {
-	return filepath.Join(defaultConfigDir(), vocabFile)
+	return filepath.Join(config.DefaultConfigDir(), vocabFile)
 }
 
-func NewDefaultVocabRepo() FileVocabRepo {
-	return FileVocabRepo{
-		path: defaultVocabFilepath(),
+func NewDefaultVocabRepo() (FileVocabRepo, error) {
+	path := defaultVocabFilepath()
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return FileVocabRepo{}, err
 	}
+	return FileVocabRepo{
+		path: path,
+	}, nil
 }

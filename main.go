@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/caproven/termdict/cmd"
@@ -9,21 +10,23 @@ import (
 )
 
 func main() {
-	if err := storage.CreateConfigDir(); err != nil {
-		panic(err)
+	v, err := storage.NewDefaultVocabRepo()
+	if err != nil {
+		fmt.Println("Failed to instantiate vocab repo")
 	}
 
-	v := storage.NewDefaultVocabRepo()
-
-	c := storage.NewDefaultFSCache()
-
+	c, err := dictionary.NewFileCache("")
+	if err != nil {
+		fmt.Println("Failed to instantiate cache")
+		os.Exit(1)
+	}
 	api := dictionary.NewDefaultWebAPI()
+	dict := dictionary.NewCachedDefiner(c, api)
 
 	cfg := &cmd.Config{
 		Out:   os.Stdout,
 		Vocab: v,
-		Cache: c,
-		Dict:  api,
+		Dict:  dict,
 	}
 	if err := cmd.NewRootCmd(cfg).Execute(); err != nil {
 		os.Exit(1)

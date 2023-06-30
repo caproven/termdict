@@ -29,7 +29,7 @@ func NewRandomCommand(cfg *Config) *cobra.Command {
 Sample usage:
   termdict random`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.run(cfg.Out, cfg.Vocab, cfg.Cache, cfg.Dict)
+			return o.run(cfg.Out, cfg.Vocab, cfg.Dict)
 		},
 	}
 
@@ -38,7 +38,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *randomOptions) run(out io.Writer, v VocabRepo, c Cache, d Definer) error {
+func (o *randomOptions) run(out io.Writer, v VocabRepo, d Definer) error {
 	vl, err := v.Load()
 	if err != nil {
 		return nil
@@ -56,5 +56,5 @@ func (o *randomOptions) run(out io.Writer, v VocabRepo, c Cache, d Definer) erro
 		limit: o.limit,
 	}
 
-	return defOpts.run(out, c, d)
+	return defOpts.run(out, d)
 }

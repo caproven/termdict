@@ -12,18 +12,11 @@ import (
 type Config struct {
 	Out   io.Writer
 	Vocab VocabRepo
-	Cache Cache
 	Dict  Definer
 }
 
 type Definer interface {
 	Define(word string) ([]dictionary.Definition, error)
-}
-
-type Cache interface {
-	Contains(word string) (bool, error)
-	Save(word string, defs []dictionary.Definition) error
-	Lookup(word string) ([]dictionary.Definition, error)
 }
 
 type VocabRepo interface {
