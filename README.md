@@ -13,7 +13,7 @@ synthesis
 [noun] The reunion of parts that have been divided.
 ```
 
-or use it to manage your own vocab list for conventient access:
+or use it to manage your own vocab list for convenient access:
 
 ```bash
 $ termdict add ameliorate entropy
