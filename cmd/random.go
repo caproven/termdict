@@ -4,14 +4,9 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"time"
 
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 type randomOptions struct {
 	limit int
