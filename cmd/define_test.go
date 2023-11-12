@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/vocab"
 )
 
 func TestDefineCmd(t *testing.T) {
@@ -17,48 +18,75 @@ func TestDefineCmd(t *testing.T) {
 			{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus."},
 			{PartOfSpeech: "noun", Meaning: "The edible fruit of this plant, having a green rind and crisp white flesh."},
 		},
+		"senescence": []dictionary.Definition{
+			{PartOfSpeech: "noun", Meaning: "definition 1"},
+			{PartOfSpeech: "adjective", Meaning: "definition 2"},
+			{PartOfSpeech: "verb", Meaning: "definition 3"},
+		},
 	}
 
 	cases := []struct {
 		name    string
 		cmd     string
-		word    string
+		list    vocab.List
 		wantOut string
 		wantErr bool
 	}{
 		{
 			name:    "word found",
 			cmd:     "define kappa",
-			word:    "kappa",
 			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
 		},
 		{
 			name:    "word not found",
 			cmd:     "define asdf",
-			word:    "asdf",
 			wantErr: true,
 		},
 		{
 			name:    "valid definitions limit",
 			cmd:     "define cucumber --limit 1",
-			word:    "cucumber",
 			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n",
 		},
 		{
 			name:    "ignored definitions limit",
 			cmd:     "define cucumber --limit 0",
-			word:    "cucumber",
 			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n[noun] The edible fruit of this plant, having a green rind and crisp white flesh.\n",
+		},
+		{
+			name:    "random with empty list",
+			cmd:     "define --random",
+			list:    vocab.List{Words: []string{}},
+			wantErr: true,
+		},
+		{
+			name:    "random with single word",
+			cmd:     "define --random",
+			list:    vocab.List{Words: []string{"kappa"}},
+			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
+		},
+		{
+			name:    "random with definitions limit",
+			cmd:     "define --random --limit 2",
+			list:    vocab.List{Words: []string{"senescence"}},
+			wantOut: "senescence\n[noun] definition 1\n[adjective] definition 2\n",
+		},
+		{
+			name:    "random and specific word",
+			cmd:     "define --random something",
+			list:    vocab.List{Words: []string{"cucumber"}},
+			wantErr: true,
 		},
 	}
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
+			v := newMemoryVocabRepo(test.list)
+
 			var b bytes.Buffer
 
 			cfg := Config{
 				Out:   &b,
-				Vocab: nil, // shouldn't be used by this cmd
+				Vocab: v,
 				Dict:  dict,
 			}
 

@@ -48,7 +48,6 @@ func NewRootCmd(cfg *Config) *cobra.Command {
 	cmd.AddCommand(NewAddCommand(cfg))
 	cmd.AddCommand(NewDefineCommand(cfg))
 	cmd.AddCommand(NewListCommand(cfg))
-	cmd.AddCommand(NewRandomCommand(cfg))
 	cmd.AddCommand(NewRemoveCommand(cfg))
 
 	return cmd
