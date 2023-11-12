@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math/rand"
+	"strings"
 
 	"github.com/caproven/termdict/dictionary"
 	"github.com/fatih/color"
@@ -12,14 +14,17 @@ import (
 )
 
 type defineOptions struct {
-	word   string
-	limit  int
-	random bool
+	word     string
+	random   bool
+	output   string
+	printers map[string]defPrinter
 }
 
 // NewDefineCommand constructs the define command
 func NewDefineCommand(cfg *Config) *cobra.Command {
-	o := &defineOptions{}
+	o := &defineOptions{
+		printers: map[string]defPrinter{},
+	}
 
 	cmd := &cobra.Command{
 		Use:   "define word | --random",
@@ -43,8 +48,11 @@ Sample usage:
 		},
 	}
 
-	cmd.Flags().IntVar(&o.limit, "limit", 0, "limit the number of entries to display")
+	o.registerPrinter(new(textPrinter), cmd)
+	o.registerPrinter(new(jsonPrinter), cmd)
+
 	cmd.Flags().BoolVar(&o.random, "random", false, "define a random word from your vocab list")
+	cmd.Flags().StringVarP(&o.output, "output", "o", "text", "output format; one of text, json")
 
 	return cmd
 }
@@ -64,8 +72,24 @@ func (o *defineOptions) run(out io.Writer, v VocabRepo, d Definer) error {
 		return err
 	}
 
-	printDefinition(out, word, defs, o.limit)
-	return nil
+	printer, err := o.getPrinter(o.output)
+	if err != nil {
+		return err
+	}
+	return printer.Print(out, word, defs)
+}
+
+func (o *defineOptions) registerPrinter(p defPrinter, cmd *cobra.Command) {
+	o.printers[p.OutputType()] = p
+	p.AddFlags(cmd)
+}
+
+func (o *defineOptions) getPrinter(output string) (defPrinter, error) {
+	printer, ok := o.printers[strings.ToLower(output)]
+	if !ok {
+		return nil, fmt.Errorf("no printer registered for output %s", output)
+	}
+	return printer, nil
 }
 
 func selectRandomWord(v VocabRepo) (string, error) {
@@ -82,20 +106,75 @@ func selectRandomWord(v VocabRepo) (string, error) {
 	return word, nil
 }
 
-// printDefinition neatly prints a word along with its definitions. Allows limiting
-// of definitions printed if limit > 0
-func printDefinition(w io.Writer, word string, defs []dictionary.Definition, limit int) {
+type defPrinter interface {
+	AddFlags(*cobra.Command)
+	OutputType() string
+	Print(w io.Writer, word string, defs []dictionary.Definition) error
+}
+
+type textPrinter struct {
+	limit int
+}
+
+func (p *textPrinter) AddFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVar(&p.limit, "limit", 0, "limit the number of entries to display in text format")
+}
+
+func (p *textPrinter) OutputType() string {
+	return "text"
+}
+
+func (p *textPrinter) Print(w io.Writer, word string, defs []dictionary.Definition) error {
 	green := color.New(color.FgGreen).SprintFunc()
-	fmt.Fprintln(w, green(word))
+	if _, err := fmt.Fprintln(w, green(word)); err != nil {
+		return err
+	}
 
 	blue := color.New(color.FgCyan).SprintFunc()
-	if limit <= 0 {
+	limit := p.limit
+	if limit <= 0 || limit > len(defs) {
 		limit = len(defs)
 	}
-	for i, def := range defs {
+	for i, def := range defs[:limit] {
 		if i >= limit {
 			break
 		}
-		fmt.Fprintf(w, "[%s] %s\n", blue(def.PartOfSpeech), def.Meaning)
+		if _, err := fmt.Fprintf(w, "[%s] %s\n", blue(def.PartOfSpeech), def.Meaning); err != nil {
+			return err
+		}
 	}
+
+	return nil
+}
+
+type jsonPrinter struct{}
+
+func (p *jsonPrinter) AddFlags(_ *cobra.Command) {
+}
+
+func (p *jsonPrinter) OutputType() string {
+	return "json"
+}
+
+func (p *jsonPrinter) Print(w io.Writer, word string, defs []dictionary.Definition) error {
+	composite := struct {
+		Word        string
+		Definitions []dictionary.Definition
+	}{
+		Word:        word,
+		Definitions: defs,
+	}
+
+	data, err := json.MarshalIndent(composite, "", "\t")
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(data); err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte{'\n'}); err != nil {
+		return err
+	}
+
+	return nil
 }

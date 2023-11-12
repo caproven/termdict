@@ -191,7 +191,10 @@ func TestPrintDefinition(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			var b bytes.Buffer
-			printDefinition(&b, test.word, test.definitions, test.limit)
+			printer := &textPrinter{limit: test.limit}
+			if err := printer.Print(&b, test.word, test.definitions); err != nil {
+				t.Errorf("failed to print definition: %v", err)
+			}
 
 			got := b.String()
 
