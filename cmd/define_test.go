@@ -53,6 +53,11 @@ func TestDefineCmd(t *testing.T) {
 			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n[noun] The edible fruit of this plant, having a green rind and crisp white flesh.\n",
 		},
 		{
+			name:    "limit higher than def count",
+			cmd:     "define kappa --limit 10",
+			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
+		},
+		{
 			name:    "random with empty list",
 			cmd:     "define --random",
 			list:    vocab.List{Words: []string{}},
@@ -75,6 +80,25 @@ func TestDefineCmd(t *testing.T) {
 			cmd:     "define --random something",
 			list:    vocab.List{Words: []string{"cucumber"}},
 			wantErr: true,
+		},
+		{
+			name:    "invalid output format",
+			cmd:     "define senescence --output abcd",
+			wantErr: true,
+		},
+		{
+			name: "json output",
+			cmd:  "define kappa --output json",
+			wantOut: `{
+	"Word": "kappa",
+	"Definitions": [
+		{
+			"PartOfSpeech": "noun",
+			"Meaning": "A tortoise-like creature in the Japanese mythology."
+		}
+	]
+}
+`,
 		},
 	}
 
@@ -110,7 +134,7 @@ func TestDefineCmd(t *testing.T) {
 	}
 }
 
-func TestPrintDefinition(t *testing.T) {
+func TestTextPrinter(t *testing.T) {
 	cases := []struct {
 		name        string
 		word        string
@@ -192,6 +216,73 @@ func TestPrintDefinition(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var b bytes.Buffer
 			printer := &textPrinter{limit: test.limit}
+			if err := printer.Print(&b, test.word, test.definitions); err != nil {
+				t.Errorf("failed to print definition: %v", err)
+			}
+
+			got := b.String()
+
+			if got != test.expected {
+				t.Errorf("got %s, expected %s", got, test.expected)
+			}
+		})
+	}
+}
+
+func TestJsonPrinter(t *testing.T) {
+	cases := []struct {
+		name        string
+		word        string
+		definitions []dictionary.Definition
+		expected    string
+	}{
+		{
+			name: "single entry",
+			word: "guava",
+			definitions: []dictionary.Definition{
+				{
+					PartOfSpeech: "noun", Meaning: "A tropical tree or shrub of the myrtle family",
+				},
+			},
+			expected: `{
+	"Word": "guava",
+	"Definitions": [
+		{
+			"PartOfSpeech": "noun",
+			"Meaning": "A tropical tree or shrub of the myrtle family"
+		}
+	]
+}
+`,
+		},
+		{
+			name: "multiple entries",
+			word: "super",
+			definitions: []dictionary.Definition{
+				{PartOfSpeech: "adjective", Meaning: "Of excellent quality"},
+				{PartOfSpeech: "adverb", Meaning: "Very; extremely"},
+			},
+			expected: `{
+	"Word": "super",
+	"Definitions": [
+		{
+			"PartOfSpeech": "adjective",
+			"Meaning": "Of excellent quality"
+		},
+		{
+			"PartOfSpeech": "adverb",
+			"Meaning": "Very; extremely"
+		}
+	]
+}
+`,
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			var b bytes.Buffer
+			printer := new(jsonPrinter)
 			if err := printer.Print(&b, test.word, test.definitions); err != nil {
 				t.Errorf("failed to print definition: %v", err)
 			}
