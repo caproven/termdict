@@ -340,7 +340,7 @@ func TestCachedDefiner_Define(t *testing.T) {
 
 			if !tt.wantErr {
 				// verify word was cached
-				
+
 				found, _ := d.cache.Contains(tt.args.word)
 				if !found {
 					t.Errorf("cache did not contain defined word %s", tt.args.word)
