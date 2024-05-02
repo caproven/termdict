@@ -22,7 +22,7 @@ $ termdict list
 ameliorate
 entropy
 
-$ termdict random
+$ termdict define --random
 ameliorate
 [verb] To become better; improve.
 ```
