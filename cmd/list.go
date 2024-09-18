@@ -25,6 +25,10 @@ Sample usage:
 			return o.run(cfg.Out, cfg.Vocab)
 		},
 	}
+
+	cmd.AddCommand(NewAddCommand(cfg))
+	cmd.AddCommand(NewRemoveCommand(cfg))
+
 	return cmd
 }
 

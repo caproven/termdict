@@ -22,9 +22,9 @@ func NewAddCommand(cfg *Config) *cobra.Command {
 		Long: `Add words to your personal vocab list.
 
 Sample usage:
-  termdict add comeuppance
-  termdict add ameliorate entropy
-  termdict add omg --no-check`,
+  termdict list add comeuppance
+  termdict list add ameliorate entropy
+  termdict list add omg --no-check`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args

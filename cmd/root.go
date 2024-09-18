@@ -45,10 +45,8 @@ func NewRootCmd(cfg *Config) *cobra.Command {
 
 	cmd.PersistentFlags().BoolVar(&o.noColor, "no-color", false, "disable colorized output")
 
-	cmd.AddCommand(NewAddCommand(cfg))
 	cmd.AddCommand(NewDefineCommand(cfg))
 	cmd.AddCommand(NewListCommand(cfg))
-	cmd.AddCommand(NewRemoveCommand(cfg))
 
 	return cmd
 }

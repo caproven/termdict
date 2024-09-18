@@ -16,7 +16,7 @@ synthesis
 or use it to manage your own vocab list for convenient access:
 
 ```bash
-$ termdict add ameliorate entropy
+$ termdict list add ameliorate entropy
 
 $ termdict list
 ameliorate

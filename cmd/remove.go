@@ -20,8 +20,8 @@ func NewRemoveCommand(cfg *Config) *cobra.Command {
 		Long: `Remove words from your personal vocab list.
 
 Sample usage:
-  termdict remove efficacy
-  termdict remove elegy chide`,
+  termdict list remove efficacy
+  termdict list remove elegy chide`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
