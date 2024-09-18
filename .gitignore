@@ -5,6 +5,7 @@
 *.so
 *.dylib
 termdict
+!termdict/
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,3 +17,7 @@ termdict
 # vendor/
 
 dist/
+
+# IDE settings
+.vscode/
+.idea/
