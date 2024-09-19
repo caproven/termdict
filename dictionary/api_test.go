@@ -94,7 +94,7 @@ func mockAPIServer(data map[string]string, endpoint string) *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		word := strings.TrimPrefix(r.URL.Path, endpoint)
-		fmt.Fprintf(w, data[word])
+		fmt.Fprint(w, data[word])
 	})
 	return httptest.NewServer(mux)
 }
