@@ -36,7 +36,7 @@ func NewFileCache(dir string) (*FileCache, error) {
 }
 
 func (c *FileCache) Lookup(word string) ([]Definition, error) {
-	path := c.fileForWord(word)
+	path := c.PathFor(word)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -53,7 +53,7 @@ func (c *FileCache) Lookup(word string) ([]Definition, error) {
 }
 
 func (c *FileCache) Contains(word string) (bool, error) {
-	path := c.fileForWord(word)
+	path := c.PathFor(word)
 
 	if _, err := os.Stat(path); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -71,12 +71,12 @@ func (c *FileCache) Save(word string, defs []Definition) error {
 		return err
 	}
 
-	path := c.fileForWord(word)
+	path := c.PathFor(word)
 
 	return os.WriteFile(path, data, os.ModePerm)
 }
 
-func (c *FileCache) fileForWord(word string) string {
+func (c *FileCache) PathFor(word string) string {
 	return fmt.Sprintf("%s/%s.json", c.dir, word)
 }
 

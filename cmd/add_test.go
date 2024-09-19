@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/dictionary/dictionarytest"
 	"github.com/caproven/termdict/vocab"
 )
 
 func TestAddCmd(t *testing.T) {
-	dict := memoryDefiner{
+	dict := dictionarytest.InMemoryDefiner{
 		"kappa": []dictionary.Definition{
 			{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology."},
 		},

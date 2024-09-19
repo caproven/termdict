@@ -1,30 +1,33 @@
-package dictionary
+package dictionary_test
 
 import (
 	"fmt"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/dictionary/dictionarytest"
 )
 
 func TestFileCache_Contains(t *testing.T) {
 	tests := []struct {
 		name    string
-		cache   map[string][]Definition
+		cache   map[string][]dictionary.Definition
 		word    string
 		want    bool
 		wantErr bool
 	}{
 		{
 			name:    "empty cache",
-			cache:   map[string][]Definition{},
+			cache:   map[string][]dictionary.Definition{},
 			word:    "kappa",
 			want:    false,
 			wantErr: false,
 		},
 		{
 			name: "find in single word cache",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"kappa": {{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"}},
 			},
 			word:    "kappa",
@@ -33,7 +36,7 @@ func TestFileCache_Contains(t *testing.T) {
 		},
 		{
 			name: "find in multi-word cache",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"kappa":    {{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"}},
 				"cucumber": {{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus"}},
 			},
@@ -43,7 +46,7 @@ func TestFileCache_Contains(t *testing.T) {
 		},
 		{
 			name: "not in cache",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"kappa":    {{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"}},
 				"cucumber": {{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus"}},
 			},
@@ -61,7 +64,7 @@ func TestFileCache_Contains(t *testing.T) {
 			}
 			defer os.RemoveAll(tempDir)
 
-			fc, err := NewFileCache(tempDir)
+			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
 				t.Fatalf("failed to create cache: %v", err)
 			}
@@ -85,17 +88,17 @@ func TestFileCache_Contains(t *testing.T) {
 func TestFileCache_Save(t *testing.T) {
 	tests := []struct {
 		name    string
-		cache   map[string][]Definition
+		cache   map[string][]dictionary.Definition
 		word    string
-		defs    []Definition
+		defs    []dictionary.Definition
 		want    string
 		wantErr bool
 	}{
 		{
 			name:  "single word single definition",
-			cache: map[string][]Definition{},
+			cache: map[string][]dictionary.Definition{},
 			word:  "kappa",
-			defs: []Definition{
+			defs: []dictionary.Definition{
 				{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"},
 			},
 			want:    `[{"PartOfSpeech":"noun","Meaning":"A tortoise-like creature in the Japanese mythology"}]`,
@@ -103,9 +106,9 @@ func TestFileCache_Save(t *testing.T) {
 		},
 		{
 			name:  "single word multiple definitions",
-			cache: map[string][]Definition{},
+			cache: map[string][]dictionary.Definition{},
 			word:  "sponge",
-			defs: []Definition{
+			defs: []dictionary.Definition{
 				{PartOfSpeech: "noun", Meaning: "A piece of porous material used for washing"},
 				{PartOfSpeech: "verb", Meaning: "To clean, soak up, or dab with a sponge"},
 			},
@@ -114,11 +117,11 @@ func TestFileCache_Save(t *testing.T) {
 		},
 		{
 			name: "existing word overwritten",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"senescence": {{PartOfSpeech: "noun", Meaning: "The state or process of ageing"}},
 			},
 			word: "senescence",
-			defs: []Definition{
+			defs: []dictionary.Definition{
 				{PartOfSpeech: "noun", Meaning: "a new definition"},
 			},
 			want: `[{"PartOfSpeech":"noun","Meaning":"a new definition"}]`,
@@ -133,7 +136,7 @@ func TestFileCache_Save(t *testing.T) {
 			}
 			defer os.RemoveAll(tempDir)
 
-			fc, err := NewFileCache(tempDir)
+			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
 				t.Fatalf("failed to create cache: %v", err)
 			}
@@ -146,7 +149,7 @@ func TestFileCache_Save(t *testing.T) {
 				t.Errorf("FileCache.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			got, err := os.ReadFile(fc.fileForWord(tt.word))
+			got, err := os.ReadFile(fc.PathFor(tt.word))
 			if err != nil {
 				t.Fatalf("failed to read expected cache file: %v", err)
 			}
@@ -160,21 +163,21 @@ func TestFileCache_Save(t *testing.T) {
 func TestFileCache_Lookup(t *testing.T) {
 	tests := []struct {
 		name    string
-		cache   map[string][]Definition
+		cache   map[string][]dictionary.Definition
 		word    string
-		want    []Definition
+		want    []dictionary.Definition
 		wantErr bool
 	}{
 		{
 			name:    "empty cache",
-			cache:   map[string][]Definition{},
+			cache:   map[string][]dictionary.Definition{},
 			word:    "kappa",
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name: "word not in cache",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"kappa":    {{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"}},
 				"cucumber": {{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus"}},
 			},
@@ -184,12 +187,12 @@ func TestFileCache_Lookup(t *testing.T) {
 		},
 		{
 			name: "word in cache",
-			cache: map[string][]Definition{
+			cache: map[string][]dictionary.Definition{
 				"kappa":    {{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology"}},
 				"cucumber": {{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus"}},
 			},
 			word: "cucumber",
-			want: []Definition{
+			want: []dictionary.Definition{
 				{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus"},
 			},
 			wantErr: false,
@@ -204,7 +207,7 @@ func TestFileCache_Lookup(t *testing.T) {
 			}
 			defer os.RemoveAll(tempDir)
 
-			fc, err := NewFileCache(tempDir)
+			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
 				t.Fatalf("failed to create cache: %v", err)
 			}
@@ -231,12 +234,12 @@ func TestFileCache_Lookup(t *testing.T) {
 		}
 		defer os.RemoveAll(tempDir)
 
-		fc, err := NewFileCache(tempDir)
+		fc, err := dictionary.NewFileCache(tempDir)
 		if err != nil {
 			t.Fatalf("failed to create cache: %v", err)
 		}
 
-		err = os.WriteFile(fc.fileForWord("mouse"), []byte("invalid_data"), os.ModePerm)
+		err = os.WriteFile(fc.PathFor("mouse"), []byte("invalid_data"), os.ModePerm)
 		if err != nil {
 			t.Errorf("failed to write temp file: %v", err)
 		}
@@ -248,7 +251,7 @@ func TestFileCache_Lookup(t *testing.T) {
 	})
 }
 
-func writeCache(cache map[string][]Definition, c Cache) error {
+func writeCache(cache map[string][]dictionary.Definition, c dictionary.Cache) error {
 	for word, defs := range cache {
 		if err := c.Save(word, defs); err != nil {
 			return err
@@ -259,8 +262,8 @@ func writeCache(cache map[string][]Definition, c Cache) error {
 
 func TestCachedDefiner_Define(t *testing.T) {
 	type fields struct {
-		cache    Cache
-		fallback Definer
+		cache    dictionary.Cache
+		fallback dictionary.Definer
 	}
 	type args struct {
 		word string
@@ -269,14 +272,14 @@ func TestCachedDefiner_Define(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []Definition
+		want    []dictionary.Definition
 		wantErr bool
 	}{
 		{
 			name: "word defined and not in cache",
 			fields: fields{
 				cache: make(memoryCache),
-				fallback: memoryDefiner{
+				fallback: dictionarytest.InMemoryDefiner{
 					"splash": {
 						{PartOfSpeech: "noun", Meaning: "The sound made by an object hitting a liquid"},
 						{PartOfSpeech: "verb", Meaning: "To hit or agitate liquid"},
@@ -284,7 +287,7 @@ func TestCachedDefiner_Define(t *testing.T) {
 				},
 			},
 			args: args{word: "splash"},
-			want: []Definition{
+			want: []dictionary.Definition{
 				{PartOfSpeech: "noun", Meaning: "The sound made by an object hitting a liquid"},
 				{PartOfSpeech: "verb", Meaning: "To hit or agitate liquid"},
 			},
@@ -296,10 +299,10 @@ func TestCachedDefiner_Define(t *testing.T) {
 				cache: memoryCache{
 					"photosynthesis": {{PartOfSpeech: "noun", Meaning: "Any process by which plants and other photoautotrophs convert light energy into chemical energy"}},
 				},
-				fallback: make(memoryDefiner),
+				fallback: make(dictionarytest.InMemoryDefiner),
 			},
 			args:    args{word: "photosynthesis"},
-			want:    []Definition{{PartOfSpeech: "noun", Meaning: "Any process by which plants and other photoautotrophs convert light energy into chemical energy"}},
+			want:    []dictionary.Definition{{PartOfSpeech: "noun", Meaning: "Any process by which plants and other photoautotrophs convert light energy into chemical energy"}},
 			wantErr: false,
 		},
 		{
@@ -308,18 +311,18 @@ func TestCachedDefiner_Define(t *testing.T) {
 				cache: memoryCache{
 					"aardvark": {{Meaning: "cached definition"}},
 				},
-				fallback: memoryDefiner{
+				fallback: dictionarytest.InMemoryDefiner{
 					"aardvark": {{Meaning: "fallback definition"}},
 				},
 			},
 			args: args{word: "aardvark"},
-			want: []Definition{{Meaning: "cached definition"}},
+			want: []dictionary.Definition{{Meaning: "cached definition"}},
 		},
 		{
 			name: "word not defined and not in cache",
 			fields: fields{
 				cache:    make(memoryCache),
-				fallback: make(memoryDefiner),
+				fallback: make(dictionarytest.InMemoryDefiner),
 			},
 			args:    args{word: "platypus"},
 			want:    nil,
@@ -328,7 +331,7 @@ func TestCachedDefiner_Define(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := NewCachedDefiner(tt.fields.cache, tt.fields.fallback)
+			d := dictionary.NewCachedDefiner(tt.fields.cache, tt.fields.fallback)
 			got, err := d.Define(tt.args.word)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CachedDefiner.Define() error = %v, wantErr %v", err, tt.wantErr)
@@ -341,11 +344,11 @@ func TestCachedDefiner_Define(t *testing.T) {
 			if !tt.wantErr {
 				// verify word was cached
 
-				found, _ := d.cache.Contains(tt.args.word)
+				found, _ := tt.fields.cache.Contains(tt.args.word)
 				if !found {
 					t.Errorf("cache did not contain defined word %s", tt.args.word)
 				}
-				lookup, _ := d.cache.Lookup(tt.args.word)
+				lookup, _ := tt.fields.cache.Lookup(tt.args.word)
 				if !reflect.DeepEqual(lookup, tt.want) {
 					t.Errorf("cached content = %v, want %v", lookup, tt.want)
 				}
@@ -354,32 +357,22 @@ func TestCachedDefiner_Define(t *testing.T) {
 	}
 }
 
-type memoryCache map[string][]Definition
+type memoryCache map[string][]dictionary.Definition
 
 func (mc memoryCache) Contains(word string) (bool, error) {
 	_, ok := mc[word]
 	return ok, nil
 }
 
-func (mc memoryCache) Save(word string, defs []Definition) error {
+func (mc memoryCache) Save(word string, defs []dictionary.Definition) error {
 	mc[word] = defs
 	return nil
 }
 
-func (mc memoryCache) Lookup(word string) ([]Definition, error) {
+func (mc memoryCache) Lookup(word string) ([]dictionary.Definition, error) {
 	defs, ok := mc[word]
 	if !ok {
 		return nil, fmt.Errorf("word %s not found in cache", word)
-	}
-	return defs, nil
-}
-
-type memoryDefiner map[string][]Definition
-
-func (m memoryDefiner) Define(word string) ([]Definition, error) {
-	defs, ok := m[word]
-	if !ok {
-		return nil, fmt.Errorf("word '%s' not found", word)
 	}
 	return defs, nil
 }

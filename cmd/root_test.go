@@ -1,21 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/vocab"
 )
-
-type memoryDefiner map[string][]dictionary.Definition
-
-func (m memoryDefiner) Define(word string) ([]dictionary.Definition, error) {
-	defs, ok := m[word]
-	if !ok {
-		return nil, fmt.Errorf("word '%s' not found", word)
-	}
-	return defs, nil
-}
 
 type memoryVocabRepo struct {
 	list vocab.List

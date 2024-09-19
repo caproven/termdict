@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/caproven/termdict/dictionary/dictionarytest"
 	"github.com/caproven/termdict/vocab"
 )
 
@@ -75,7 +76,7 @@ func TestRemoveCmd(t *testing.T) {
 			cfg := Config{
 				Out:   os.Stdout,
 				Vocab: v,
-				Dict:  memoryDefiner{},
+				Dict:  dictionarytest.InMemoryDefiner{},
 			}
 
 			cmd := NewRootCmd(&cfg)

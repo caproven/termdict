@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/caproven/termdict/dictionary/dictionarytest"
 	"github.com/caproven/termdict/vocab"
 )
 
@@ -48,7 +49,7 @@ func TestListCmd(t *testing.T) {
 			cfg := Config{
 				Out:   &b,
 				Vocab: v,
-				Dict:  memoryDefiner{},
+				Dict:  dictionarytest.InMemoryDefiner{},
 			}
 
 			cmd := NewRootCmd(&cfg)
