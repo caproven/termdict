@@ -1,6 +1,7 @@
 package dictionary_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -69,11 +70,11 @@ func TestFileCache_Contains(t *testing.T) {
 				t.Fatalf("failed to create cache: %v", err)
 			}
 
-			if err := writeCache(tt.cache, fc); err != nil {
+			if err := writeCache(t.Context(), tt.cache, fc); err != nil {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			got, err := fc.Contains(tt.word)
+			got, err := fc.Contains(t.Context(), tt.word)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FileCache.Contains() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -141,11 +142,11 @@ func TestFileCache_Save(t *testing.T) {
 				t.Fatalf("failed to create cache: %v", err)
 			}
 
-			if err := writeCache(tt.cache, fc); err != nil {
+			if err := writeCache(t.Context(), tt.cache, fc); err != nil {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			if err := fc.Save(tt.word, tt.defs); (err != nil) != tt.wantErr {
+			if err := fc.Save(t.Context(), tt.word, tt.defs); (err != nil) != tt.wantErr {
 				t.Errorf("FileCache.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -212,11 +213,11 @@ func TestFileCache_Lookup(t *testing.T) {
 				t.Fatalf("failed to create cache: %v", err)
 			}
 
-			if err := writeCache(tt.cache, fc); err != nil {
+			if err := writeCache(t.Context(), tt.cache, fc); err != nil {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			got, err := fc.Lookup(tt.word)
+			got, err := fc.Lookup(t.Context(), tt.word)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FileCache.Lookup() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -244,16 +245,16 @@ func TestFileCache_Lookup(t *testing.T) {
 			t.Errorf("failed to write temp file: %v", err)
 		}
 
-		_, err = fc.Lookup("mouse")
+		_, err = fc.Lookup(t.Context(), "mouse")
 		if err == nil {
 			t.Errorf("FileCache.Lookup() error = %v, wantErr %v", err, true)
 		}
 	})
 }
 
-func writeCache(cache map[string][]dictionary.Definition, c dictionary.Cache) error {
+func writeCache(ctx context.Context, cache map[string][]dictionary.Definition, c dictionary.Cache) error {
 	for word, defs := range cache {
-		if err := c.Save(word, defs); err != nil {
+		if err := c.Save(ctx, word, defs); err != nil {
 			return err
 		}
 	}
@@ -332,7 +333,7 @@ func TestCachedDefiner_Define(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d := dictionary.NewCachedDefiner(tt.fields.cache, tt.fields.fallback)
-			got, err := d.Define(tt.args.word)
+			got, err := d.Define(t.Context(), tt.args.word)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CachedDefiner.Define() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -344,11 +345,11 @@ func TestCachedDefiner_Define(t *testing.T) {
 			if !tt.wantErr {
 				// verify word was cached
 
-				found, _ := tt.fields.cache.Contains(tt.args.word)
+				found, _ := tt.fields.cache.Contains(t.Context(), tt.args.word)
 				if !found {
 					t.Errorf("cache did not contain defined word %s", tt.args.word)
 				}
-				lookup, _ := tt.fields.cache.Lookup(tt.args.word)
+				lookup, _ := tt.fields.cache.Lookup(t.Context(), tt.args.word)
 				if !reflect.DeepEqual(lookup, tt.want) {
 					t.Errorf("cached content = %v, want %v", lookup, tt.want)
 				}
@@ -359,17 +360,17 @@ func TestCachedDefiner_Define(t *testing.T) {
 
 type memoryCache map[string][]dictionary.Definition
 
-func (mc memoryCache) Contains(word string) (bool, error) {
+func (mc memoryCache) Contains(_ context.Context, word string) (bool, error) {
 	_, ok := mc[word]
 	return ok, nil
 }
 
-func (mc memoryCache) Save(word string, defs []dictionary.Definition) error {
+func (mc memoryCache) Save(_ context.Context, word string, defs []dictionary.Definition) error {
 	mc[word] = defs
 	return nil
 }
 
-func (mc memoryCache) Lookup(word string) ([]dictionary.Definition, error) {
+func (mc memoryCache) Lookup(_ context.Context, word string) ([]dictionary.Definition, error) {
 	defs, ok := mc[word]
 	if !ok {
 		return nil, fmt.Errorf("word %s not found in cache", word)
