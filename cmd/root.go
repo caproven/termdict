@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
@@ -17,7 +18,7 @@ type Config struct {
 }
 
 type Definer interface {
-	Define(word string) ([]dictionary.Definition, error)
+	Define(ctx context.Context, word string) ([]dictionary.Definition, error)
 }
 
 type VocabRepo interface {

@@ -23,8 +23,9 @@ func TestDefine(t *testing.T) {
 	defer apiServer.Close()
 
 	api := WebAPI{
-		url:      apiServer.URL,
-		endpoint: defineEndpoint,
+		url:        apiServer.URL,
+		endpoint:   defineEndpoint,
+		httpClient: http.DefaultClient,
 	}
 
 	cases := []struct {
@@ -71,7 +72,7 @@ func TestDefine(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := api.Define(test.word)
+			got, err := api.Define(t.Context(), test.word)
 
 			if test.errExpected {
 				if err == nil {

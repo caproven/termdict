@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,7 +45,7 @@ Sample usage:
 				o.word = args[0]
 			}
 
-			return o.run(cfg.Out, cfg.Vocab, cfg.Dict)
+			return o.run(cmd.Context(), cfg.Out, cfg.Vocab, cfg.Dict)
 		},
 	}
 
@@ -57,7 +58,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *defineOptions) run(out io.Writer, v VocabRepo, d Definer) error {
+func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d Definer) error {
 	word := o.word
 	if o.random {
 		var err error
@@ -67,7 +68,7 @@ func (o *defineOptions) run(out io.Writer, v VocabRepo, d Definer) error {
 		}
 	}
 
-	defs, err := d.Define(word)
+	defs, err := d.Define(ctx, word)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -29,7 +30,7 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 
-			return o.run(cfg.Out, cfg.Vocab, cfg.Dict)
+			return o.run(cmd.Context(), cfg.Out, cfg.Vocab, cfg.Dict)
 		},
 	}
 
@@ -38,7 +39,7 @@ Sample usage:
 	return cmd
 }
 
-func (o *addOptions) run(out io.Writer, v VocabRepo, d Definer) error {
+func (o *addOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d Definer) error {
 	vl, err := v.Load()
 	if err != nil {
 		return err
@@ -46,7 +47,7 @@ func (o *addOptions) run(out io.Writer, v VocabRepo, d Definer) error {
 
 	for _, word := range o.words {
 		if !o.noCheck {
-			if _, err := d.Define(word); err != nil {
+			if _, err := d.Define(ctx, word); err != nil {
 				return fmt.Errorf("failed to add word '%s'; couldn't find a definition", word)
 			}
 		}

@@ -1,6 +1,7 @@
 package dictionary
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,19 +36,21 @@ type apiDefinition struct {
 type WebAPI struct {
 	url string
 	// Word to define should be appended to the end
-	endpoint string
+	endpoint   string
+	httpClient *http.Client
 }
 
 // NewDefaultWebAPI creates a new instance for connecting to a dictionary API
 func NewDefaultWebAPI() WebAPI {
 	return WebAPI{
-		url:      defaultURL,
-		endpoint: defaultEndpoint,
+		url:        defaultURL,
+		endpoint:   defaultEndpoint,
+		httpClient: http.DefaultClient,
 	}
 }
 
-func (api WebAPI) Define(word string) ([]Definition, error) {
-	apiResp, err := api.query(word)
+func (api WebAPI) Define(ctx context.Context, word string) ([]Definition, error) {
+	apiResp, err := api.query(ctx, word)
 	if err != nil {
 		return nil, fmt.Errorf("failed to define word '%s'", word)
 	}
@@ -67,8 +70,13 @@ func (api WebAPI) Define(word string) ([]Definition, error) {
 	return defs, nil
 }
 
-func (api WebAPI) query(w string) (apiResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s%s%s", api.url, api.endpoint, w))
+func (api WebAPI) query(ctx context.Context, w string) (apiResponse, error) {
+	reqURL := fmt.Sprintf("%s%s%s", api.url, api.endpoint, w)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return apiResponse{}, fmt.Errorf("build request: %w", err)
+	}
+	resp, err := api.httpClient.Do(req)
 	if err != nil {
 		return apiResponse{}, err
 	}

@@ -1,6 +1,7 @@
 package dictionary
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func NewFileCache(dir string) (*FileCache, error) {
 	return &FileCache{dir: dir}, nil
 }
 
-func (c *FileCache) Lookup(word string) ([]Definition, error) {
+func (c *FileCache) Lookup(_ context.Context, word string) ([]Definition, error) {
 	path := c.PathFor(word)
 
 	data, err := os.ReadFile(path)
@@ -52,7 +53,7 @@ func (c *FileCache) Lookup(word string) ([]Definition, error) {
 	return defs, nil
 }
 
-func (c *FileCache) Contains(word string) (bool, error) {
+func (c *FileCache) Contains(_ context.Context, word string) (bool, error) {
 	path := c.PathFor(word)
 
 	if _, err := os.Stat(path); err != nil {
@@ -65,7 +66,7 @@ func (c *FileCache) Contains(word string) (bool, error) {
 	return true, nil
 }
 
-func (c *FileCache) Save(word string, defs []Definition) error {
+func (c *FileCache) Save(_ context.Context, word string, defs []Definition) error {
 	data, err := json.Marshal(defs)
 	if err != nil {
 		return err
@@ -81,13 +82,13 @@ func (c *FileCache) PathFor(word string) string {
 }
 
 type Definer interface {
-	Define(word string) ([]Definition, error)
+	Define(ctx context.Context, word string) ([]Definition, error)
 }
 
 type Cache interface {
-	Lookup(word string) ([]Definition, error)
-	Contains(word string) (bool, error)
-	Save(word string, defs []Definition) error
+	Lookup(ctx context.Context, word string) ([]Definition, error)
+	Contains(ctx context.Context, word string) (bool, error)
+	Save(ctx context.Context, word string, defs []Definition) error
 }
 
 type CachedDefiner struct {
@@ -102,24 +103,24 @@ func NewCachedDefiner(c Cache, d Definer) *CachedDefiner {
 	}
 }
 
-func (d *CachedDefiner) Define(word string) ([]Definition, error) {
-	ok, err := d.cache.Contains(word)
+func (d *CachedDefiner) Define(ctx context.Context, word string) ([]Definition, error) {
+	ok, err := d.cache.Contains(ctx, word)
 	if err != nil {
 		return nil, err
 	}
 	if ok {
-		defs, err := d.cache.Lookup(word)
+		defs, err := d.cache.Lookup(ctx, word)
 		if err != nil {
 			return nil, err
 		}
 		return defs, nil
 	}
 
-	defs, err := d.fallback.Define(word)
+	defs, err := d.fallback.Define(ctx, word)
 	if err != nil {
 		return nil, err
 	}
-	if err = d.cache.Save(word, defs); err != nil {
+	if err = d.cache.Save(ctx, word, defs); err != nil {
 		return nil, err
 	}
 	return defs, nil
