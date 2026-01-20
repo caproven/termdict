@@ -13,6 +13,7 @@ func main() {
 	v, err := storage.NewDefaultVocabRepo()
 	if err != nil {
 		fmt.Println("Failed to instantiate vocab repo")
+		os.Exit(1)
 	}
 
 	c, err := dictionary.NewFileCache("")
