@@ -74,13 +74,13 @@ func TestFileCache_Contains(t *testing.T) {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			got, err := fc.Contains(t.Context(), tt.word)
+			got, err := fc.ContainsWord(t.Context(), tt.word)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("FileCache.Contains() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("FileCache.ContainsWord() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("FileCache.Contains() = %v, want %v", got, tt.want)
+				t.Errorf("FileCache.ContainsWord() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -146,8 +146,8 @@ func TestFileCache_Save(t *testing.T) {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			if err := fc.Save(t.Context(), tt.word, tt.defs); (err != nil) != tt.wantErr {
-				t.Errorf("FileCache.Save() error = %v, wantErr %v", err, tt.wantErr)
+			if err := fc.SaveWord(t.Context(), tt.word, tt.defs); (err != nil) != tt.wantErr {
+				t.Errorf("FileCache.SaveWord() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			got, err := os.ReadFile(fc.PathFor(tt.word))
@@ -217,13 +217,13 @@ func TestFileCache_Lookup(t *testing.T) {
 				t.Fatalf("failed to write initial cache files: %v", err)
 			}
 
-			got, err := fc.Lookup(t.Context(), tt.word)
+			got, err := fc.LookupWord(t.Context(), tt.word)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("FileCache.Lookup() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("FileCache.LookupWord() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FileCache.Lookup() = %v, want %v", got, tt.want)
+				t.Errorf("FileCache.LookupWord() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -245,16 +245,16 @@ func TestFileCache_Lookup(t *testing.T) {
 			t.Errorf("failed to write temp file: %v", err)
 		}
 
-		_, err = fc.Lookup(t.Context(), "mouse")
+		_, err = fc.LookupWord(t.Context(), "mouse")
 		if err == nil {
-			t.Errorf("FileCache.Lookup() error = %v, wantErr %v", err, true)
+			t.Errorf("FileCache.LookupWord() error = %v, wantErr %v", err, true)
 		}
 	})
 }
 
 func writeCache(ctx context.Context, cache map[string][]dictionary.Definition, c dictionary.Cache) error {
 	for word, defs := range cache {
-		if err := c.Save(ctx, word, defs); err != nil {
+		if err := c.SaveWord(ctx, word, defs); err != nil {
 			return err
 		}
 	}
@@ -345,11 +345,11 @@ func TestCachedDefiner_Define(t *testing.T) {
 			if !tt.wantErr {
 				// verify word was cached
 
-				found, _ := tt.fields.cache.Contains(t.Context(), tt.args.word)
+				found, _ := tt.fields.cache.ContainsWord(t.Context(), tt.args.word)
 				if !found {
 					t.Errorf("cache did not contain defined word %s", tt.args.word)
 				}
-				lookup, _ := tt.fields.cache.Lookup(t.Context(), tt.args.word)
+				lookup, _ := tt.fields.cache.LookupWord(t.Context(), tt.args.word)
 				if !reflect.DeepEqual(lookup, tt.want) {
 					t.Errorf("cached content = %v, want %v", lookup, tt.want)
 				}
@@ -360,17 +360,17 @@ func TestCachedDefiner_Define(t *testing.T) {
 
 type memoryCache map[string][]dictionary.Definition
 
-func (mc memoryCache) Contains(_ context.Context, word string) (bool, error) {
+func (mc memoryCache) ContainsWord(_ context.Context, word string) (bool, error) {
 	_, ok := mc[word]
 	return ok, nil
 }
 
-func (mc memoryCache) Save(_ context.Context, word string, defs []dictionary.Definition) error {
+func (mc memoryCache) SaveWord(_ context.Context, word string, defs []dictionary.Definition) error {
 	mc[word] = defs
 	return nil
 }
 
-func (mc memoryCache) Lookup(_ context.Context, word string) ([]dictionary.Definition, error) {
+func (mc memoryCache) LookupWord(_ context.Context, word string) ([]dictionary.Definition, error) {
 	defs, ok := mc[word]
 	if !ok {
 		return nil, fmt.Errorf("word %s not found in cache", word)
