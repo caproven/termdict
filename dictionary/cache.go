@@ -36,7 +36,7 @@ func NewFileCache(dir string) (*FileCache, error) {
 	return &FileCache{dir: dir}, nil
 }
 
-func (c *FileCache) Lookup(_ context.Context, word string) ([]Definition, error) {
+func (c *FileCache) LookupWord(_ context.Context, word string) ([]Definition, error) {
 	path := c.PathFor(word)
 
 	data, err := os.ReadFile(path)
@@ -53,7 +53,7 @@ func (c *FileCache) Lookup(_ context.Context, word string) ([]Definition, error)
 	return defs, nil
 }
 
-func (c *FileCache) Contains(_ context.Context, word string) (bool, error) {
+func (c *FileCache) ContainsWord(_ context.Context, word string) (bool, error) {
 	path := c.PathFor(word)
 
 	if _, err := os.Stat(path); err != nil {
@@ -66,7 +66,7 @@ func (c *FileCache) Contains(_ context.Context, word string) (bool, error) {
 	return true, nil
 }
 
-func (c *FileCache) Save(_ context.Context, word string, defs []Definition) error {
+func (c *FileCache) SaveWord(_ context.Context, word string, defs []Definition) error {
 	data, err := json.Marshal(defs)
 	if err != nil {
 		return err
@@ -86,9 +86,9 @@ type Definer interface {
 }
 
 type Cache interface {
-	Lookup(ctx context.Context, word string) ([]Definition, error)
-	Contains(ctx context.Context, word string) (bool, error)
-	Save(ctx context.Context, word string, defs []Definition) error
+	LookupWord(ctx context.Context, word string) ([]Definition, error)
+	ContainsWord(ctx context.Context, word string) (bool, error)
+	SaveWord(ctx context.Context, word string, defs []Definition) error
 }
 
 type CachedDefiner struct {
@@ -104,12 +104,12 @@ func NewCachedDefiner(c Cache, d Definer) *CachedDefiner {
 }
 
 func (d *CachedDefiner) Define(ctx context.Context, word string) ([]Definition, error) {
-	ok, err := d.cache.Contains(ctx, word)
+	ok, err := d.cache.ContainsWord(ctx, word)
 	if err != nil {
 		return nil, err
 	}
 	if ok {
-		defs, err := d.cache.Lookup(ctx, word)
+		defs, err := d.cache.LookupWord(ctx, word)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func (d *CachedDefiner) Define(ctx context.Context, word string) ([]Definition, 
 	if err != nil {
 		return nil, err
 	}
-	if err = d.cache.Save(ctx, word, defs); err != nil {
+	if err = d.cache.SaveWord(ctx, word, defs); err != nil {
 		return nil, err
 	}
 	return defs, nil
