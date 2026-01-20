@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/caproven/termdict/cmd"
 	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/storage"
+	"github.com/caproven/termdict/storage/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -16,7 +20,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	c, err := dictionary.NewFileCache("")
+	db, err := sql.Open("sqlite3", "data.sqlite")
+	if err != nil {
+		fmt.Println("Failed to open database")
+		os.Exit(1)
+	}
+	defer db.Close()
+	c, err := sqlite.NewStore(context.Background(), db)
 	if err != nil {
 		fmt.Println("Failed to instantiate cache")
 		os.Exit(1)
