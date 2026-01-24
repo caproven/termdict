@@ -53,6 +53,13 @@ func (s *Store) LookupWord(ctx context.Context, word string) ([]dictionary.Defin
 		}
 		defs = append(defs, def)
 	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("query definitions for word %q: %w", word, rows.Err())
+	}
+
+	if len(defs) == 0 {
+		return nil, fmt.Errorf("no definitions found for word %q", word)
+	}
 
 	return defs, nil
 }
@@ -70,6 +77,13 @@ func (s *Store) ContainsWord(ctx context.Context, word string) (bool, error) {
 
 func (s *Store) SaveWord(ctx context.Context, word string, defs []dictionary.Definition) (err error) {
 	word = strings.ToLower(word)
+	if len(strings.TrimSpace(word)) == 0 {
+		return errors.New("word is blank")
+	}
+	if len(defs) == 0 {
+		return errors.New("no definitions to save")
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
