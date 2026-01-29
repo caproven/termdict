@@ -16,3 +16,10 @@ CREATE TABLE IF NOT EXISTS definitions
 );
 
 CREATE INDEX IF NOT EXISTS idx_definitions_word_id ON definitions (word_id);
+
+CREATE TABLE IF NOT EXISTS vocab
+(
+    id                 INTEGER PRIMARY KEY,
+    word               TEXT    NOT NULL UNIQUE COLLATE nocase,
+    creation_timestamp INTEGER NOT NULL DEFAULT (unixepoch())
+);

@@ -40,22 +40,17 @@ Sample usage:
 }
 
 func (o *addOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d Definer) error {
-	vl, err := v.Load()
-	if err != nil {
-		return err
-	}
-
-	for _, word := range o.words {
-		if !o.noCheck {
+	if !o.noCheck {
+		for _, word := range o.words {
 			if _, err := d.Define(ctx, word); err != nil {
-				return fmt.Errorf("failed to add word '%s'; couldn't find a definition", word)
+				return fmt.Errorf("define word %q to be added to list: %w", word, err)
 			}
 		}
-
-		if err := vl.AddWord(word); err != nil {
-			return err
-		}
 	}
 
-	return v.Save(vl)
+	if err := v.AddWordsToList(ctx, o.words); err != nil {
+		return fmt.Errorf("add words to list: %w", err)
+	}
+
+	return nil
 }

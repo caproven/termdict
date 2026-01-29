@@ -62,7 +62,7 @@ func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d D
 	word := o.word
 	if o.random {
 		var err error
-		word, err = selectRandomWord(v)
+		word, err = selectRandomWord(ctx, v)
 		if err != nil {
 			return err
 		}
@@ -93,17 +93,17 @@ func (o *defineOptions) getPrinter(output string) (defPrinter, error) {
 	return printer, nil
 }
 
-func selectRandomWord(v VocabRepo) (string, error) {
-	vl, err := v.Load()
+func selectRandomWord(ctx context.Context, v VocabRepo) (string, error) {
+	list, err := v.GetWordsInList(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("list words: %w", err)
 	}
 
-	if len(vl.Words) == 0 {
-		return "", errors.New("no words in vocab list")
+	if len(list) == 0 {
+		return "", errors.New("no words found")
 	}
 
-	word := vl.Words[rand.Intn(len(vl.Words))]
+	word := list[rand.Intn(len(list))]
 	return word, nil
 }
 
