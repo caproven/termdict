@@ -38,6 +38,6 @@ func (o *removeOptions) run(ctx context.Context, out io.Writer, v VocabRepo) err
 	if err := v.RemoveWordsFromList(ctx, o.words); err != nil {
 		return fmt.Errorf("remove words from list: %w", err)
 	}
-
+	// TODO output something to indicate success
 	return nil
 }
