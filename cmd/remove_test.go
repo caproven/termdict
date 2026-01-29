@@ -1,106 +1,86 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/caproven/termdict/dictionary/dictionarytest"
-	"github.com/caproven/termdict/vocab"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRemoveCmd(t *testing.T) {
-	cases := []struct {
-		name         string
-		cmd          string
-		initList     vocab.List
-		expectedList vocab.List
-		errExpected  bool
-	}{
-		{
-			name:         "from empty list",
-			cmd:          "list remove cucumber",
-			initList:     vocab.List{Words: []string{}},
-			expectedList: vocab.List{Words: []string{}},
-			errExpected:  true,
-		},
-		{
-			name:         "from beginning",
-			cmd:          "list remove dictionary",
-			initList:     vocab.List{Words: []string{"dictionary", "cucumber", "kappa"}},
-			expectedList: vocab.List{Words: []string{"cucumber", "kappa"}},
-			errExpected:  false,
-		},
-		{
-			name:         "from middle",
-			cmd:          "list remove cucumber",
-			initList:     vocab.List{Words: []string{"dictionary", "cucumber", "kappa"}},
-			expectedList: vocab.List{Words: []string{"dictionary", "kappa"}},
-			errExpected:  false,
-		},
-		{
-			name:         "from end",
-			cmd:          "list remove kappa",
-			initList:     vocab.List{Words: []string{"dictionary", "cucumber", "kappa"}},
-			expectedList: vocab.List{Words: []string{"dictionary", "cucumber"}},
-			errExpected:  false,
-		},
-		{
-			name:         "multiple words",
-			cmd:          "list remove kappa terminal",
-			initList:     vocab.List{Words: []string{"kappa", "terminal", "dictionary", "cucumber"}},
-			expectedList: vocab.List{Words: []string{"dictionary", "cucumber"}},
-			errExpected:  false,
-		},
-		{
-			name:         "word that doesn't exist",
-			cmd:          "list remove asdf",
-			initList:     vocab.List{Words: []string{"dictionary", "cucumber", "kappa"}},
-			expectedList: vocab.List{Words: []string{"dictionary", "cucumber", "kappa"}},
-			errExpected:  true,
-		},
-		{
-			name:         "multiple words not all exist",
-			cmd:          "list remove cucumber terminal",
-			initList:     vocab.List{Words: []string{"kappa", "cucumber", "dictionary"}},
-			expectedList: vocab.List{Words: []string{"kappa", "cucumber", "dictionary"}},
-			errExpected:  true,
-		},
-	}
+	t.Run("no words specified", func(t *testing.T) {
+		cfg := Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
 
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			v := newMemoryVocabRepo(test.initList)
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list", "remove"})
 
-			cfg := Config{
-				Out:   os.Stdout,
-				Vocab: v,
-				Dict:  dictionarytest.InMemoryDefiner{},
-			}
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
 
-			cmd := NewRootCmd(&cfg)
-			cmd.SetArgs(strings.Split(test.cmd, " "))
+	t.Run("failure removing from list", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.Anything).Return(errors.New("failure")).Once()
 
-			err := cmd.Execute()
+		cfg := Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
 
-			if test.errExpected {
-				if err == nil {
-					t.Error("expected err but didn't get one")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("didn't expect err but got: %v", err)
-				}
-			}
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list", "remove", "foo"})
 
-			got, err := v.Load()
-			if err != nil {
-				t.Errorf("failed to load storage after executing command: %v", err)
-			}
-			if !reflect.DeepEqual(got, test.expectedList) {
-				t.Errorf("got %v, expected %v", got, test.expectedList)
-			}
-		})
-	}
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("remove single word", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.MatchedBy(func(words []string) bool {
+			return reflect.DeepEqual(words, []string{"cucumber"})
+		})).Return(nil).Once()
+
+		cfg := Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
+
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list", "remove", "cucumber"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
+
+	t.Run("remove multiple words", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.MatchedBy(func(words []string) bool {
+			return reflect.DeepEqual(words, []string{"kappa", "cucumber"})
+		})).Return(nil).Once()
+
+		cfg := Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
+
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list", "remove", "kappa", "cucumber"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
 }

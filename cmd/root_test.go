@@ -1,24 +1,44 @@
 package cmd
 
 import (
-	"github.com/caproven/termdict/vocab"
+	"context"
+
+	"github.com/caproven/termdict/dictionary"
+	"github.com/stretchr/testify/mock"
 )
 
-type memoryVocabRepo struct {
-	list vocab.List
+type mockVocabRepo struct {
+	mock.Mock
 }
 
-func newMemoryVocabRepo(init vocab.List) *memoryVocabRepo {
-	return &memoryVocabRepo{list: init}
+func (m *mockVocabRepo) AddWordsToList(ctx context.Context, words []string) error {
+	args := m.Called(ctx, words)
+	return args.Error(0)
 }
 
-func (mvr *memoryVocabRepo) Load() (vocab.List, error) {
-	list := vocab.List{Words: []string{}}
-	list.Words = append(list.Words, mvr.list.Words...)
-	return list, nil
+func (m *mockVocabRepo) RemoveWordsFromList(ctx context.Context, words []string) error {
+	args := m.Called(ctx, words)
+	return args.Error(0)
 }
 
-func (mvr *memoryVocabRepo) Save(vl vocab.List) error {
-	mvr.list = vl
-	return nil
+func (m *mockVocabRepo) GetWordsInList(ctx context.Context) ([]string, error) {
+	args := m.Called(ctx)
+	words, err := args.Get(0), args.Error(1)
+	if words == nil {
+		return nil, err
+	}
+	return words.([]string), err
+}
+
+type mockDefiner struct {
+	mock.Mock
+}
+
+func (m *mockDefiner) Define(ctx context.Context, word string) ([]dictionary.Definition, error) {
+	args := m.Called(ctx, word)
+	defs, err := args.Get(0), args.Error(1)
+	if defs == nil {
+		return nil, err
+	}
+	return defs.([]dictionary.Definition), err
 }

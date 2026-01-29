@@ -7,8 +7,10 @@ import (
 
 	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/dictionary/dictionarytest"
-	"github.com/caproven/termdict/vocab"
 )
+
+// TODO these tests gonna be a doozy, take the time to think through how they should be restructured. Ideally
+// the printer would be dep injected (not resolved) and we can just stub that out too.
 
 func TestDefineCmd(t *testing.T) {
 	dict := dictionarytest.InMemoryDefiner{

@@ -2,75 +2,95 @@ package cmd
 
 import (
 	"bytes"
-	"strings"
+	"errors"
+	"os"
 	"testing"
 
 	"github.com/caproven/termdict/dictionary/dictionarytest"
-	"github.com/caproven/termdict/vocab"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestListCmd(t *testing.T) {
-	cases := []struct {
-		name        string
-		cmd         string
-		initList    vocab.List
-		expectedOut string
-		errExpected bool
-	}{
-		{
-			name:        "empty list",
-			cmd:         "list",
-			initList:    vocab.List{Words: []string{}},
-			expectedOut: "no words in vocab list\n",
-			errExpected: false,
-		},
-		{
-			name:        "single word",
-			cmd:         "list",
-			initList:    vocab.List{Words: []string{"kappa"}},
-			expectedOut: "kappa\n",
-			errExpected: false,
-		},
-		{
-			name:        "multiple words",
-			cmd:         "list",
-			initList:    vocab.List{Words: []string{"kappa", "cucumber", "terminal", "dictionary"}},
-			expectedOut: "kappa\ncucumber\nterminal\ndictionary\n",
-			errExpected: false,
-		},
-	}
+	t.Run("failure fetching list", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return(nil, errors.New("failure")).Once()
 
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			v := newMemoryVocabRepo(test.initList)
+		cfg := Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
 
-			var b bytes.Buffer
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list"})
 
-			cfg := Config{
-				Out:   &b,
-				Vocab: v,
-				Dict:  dictionarytest.InMemoryDefiner{},
-			}
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
 
-			cmd := NewRootCmd(&cfg)
-			cmd.SetArgs(strings.Split(test.cmd, " "))
+	t.Run("empty list", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{}, nil).Once()
 
-			err := cmd.Execute()
-			out := b.String()
+		var b bytes.Buffer
+		cfg := Config{
+			Out:   &b,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
 
-			if test.errExpected {
-				if err == nil {
-					t.Error("expected err but didn't get one")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("didn't expect err but got: %v", err)
-				}
-			}
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list"})
 
-			if out != test.expectedOut {
-				t.Errorf("got %v, expected %v", out, test.expectedOut)
-			}
-		})
-	}
+		err := cmd.Execute()
+		require.NoError(t, err)
+
+		assert.Equal(t, "no words in vocab list\n", b.String())
+	})
+
+	t.Run("single word", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{"kappa"}, nil).Once()
+
+		var b bytes.Buffer
+		cfg := Config{
+			Out:   &b,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
+
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+
+		assert.Equal(t, "kappa\n", b.String())
+	})
+
+	t.Run("multiple words", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{"kappa", "cucumber", "terminal", "dictionary"}, nil).Once()
+
+		var b bytes.Buffer
+		cfg := Config{
+			Out:   &b,
+			Vocab: vocabRepo,
+			Dict:  dictionarytest.InMemoryDefiner{},
+		}
+
+		cmd := NewRootCmd(&cfg)
+		cmd.SetArgs([]string{"list"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+
+		assert.Equal(t, "kappa\ncucumber\nterminal\ndictionary\n", b.String())
+	})
 }
