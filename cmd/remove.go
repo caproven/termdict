@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -26,23 +28,16 @@ Sample usage:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.words = args
 
-			return o.run(cfg.Out, cfg.Vocab)
+			return o.run(cmd.Context(), cfg.Out, cfg.Vocab)
 		},
 	}
 	return cmd
 }
 
-func (o *removeOptions) run(out io.Writer, v VocabRepo) error {
-	vl, err := v.Load()
-	if err != nil {
-		return err
+func (o *removeOptions) run(ctx context.Context, out io.Writer, v VocabRepo) error {
+	if err := v.RemoveWordsFromList(ctx, o.words); err != nil {
+		return fmt.Errorf("remove words from list: %w", err)
 	}
 
-	for _, word := range o.words {
-		if err := vl.RemoveWord(word); err != nil {
-			return err
-		}
-	}
-
-	return v.Save(vl)
+	return nil
 }

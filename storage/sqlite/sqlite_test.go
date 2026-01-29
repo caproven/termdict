@@ -236,5 +236,205 @@ func TestStore_SaveWord(t *testing.T) {
 			{PartOfSpeech: "verb", Meaning: "def 1"},
 		})
 		assert.Error(t, err)
+		// TODO check ids or something
 	})
+}
+
+func TestStore_AddWordsToList(t *testing.T) {
+	t.Run("all new words", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		list := []string{"cascade", "dour"}
+		err = store.AddWordsToList(t.Context(), list)
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, list, got)
+	})
+
+	t.Run("new words with some existing", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('foo')`)
+		require.NoError(t, err)
+
+		err = store.AddWordsToList(t.Context(), []string{"foo", "bar", "baz"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"foo", "bar", "baz"}, got)
+	})
+
+	t.Run("all existing words", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('foo'), ('bar')`)
+		require.NoError(t, err)
+
+		err = store.AddWordsToList(t.Context(), []string{"foo", "bar"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"foo", "bar"}, got)
+	})
+
+	t.Run("capitalization ignored for inserts", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		err = store.AddWordsToList(t.Context(), []string{"IRRESOLUTE"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"irresolute"}, got)
+	})
+
+	t.Run("capitalization ignored for duplicates", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('cacophony')`)
+		require.NoError(t, err)
+
+		err = store.AddWordsToList(t.Context(), []string{"CACOPHONY"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"cacophony"}, got)
+	})
+}
+
+func TestStore_RemoveWordsFromList(t *testing.T) {
+	t.Run("all words to delete exist", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('tepid'), ('surmise'), ('eschew')`)
+		require.NoError(t, err)
+
+		// Out of order from inserts to show order doesn't matter
+		err = store.RemoveWordsFromList(t.Context(), []string{"eschew", "tepid", "surmise"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Empty(t, got)
+	})
+
+	t.Run("some words to delete already exist", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('pyrrhic'), ('pervade')`)
+		require.NoError(t, err)
+
+		err = store.RemoveWordsFromList(t.Context(), []string{"pyrrhic"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"pervade"}, got)
+	})
+
+	t.Run("no words to delete exist", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('ambivalence')`)
+		require.NoError(t, err)
+
+		err = store.RemoveWordsFromList(t.Context(), []string{"qwerty", "dvorak"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"ambivalence"}, got)
+	})
+
+	t.Run("capitalization ignored", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('herbaceous')`)
+		require.NoError(t, err)
+
+		err = store.RemoveWordsFromList(t.Context(), []string{"HERBACEOUS"})
+		require.NoError(t, err)
+
+		got := getVocabList(t, db)
+		assert.Empty(t, got)
+	})
+}
+
+func TestStore_GetWordsInList(t *testing.T) {
+	t.Run("no words", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		got, err := store.GetWordsInList(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, got)
+	})
+
+	t.Run("words alphabetically sorted at insertion", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('aardvark'), ('zebra')`)
+		require.NoError(t, err)
+
+		got, err := store.GetWordsInList(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"aardvark", "zebra"}, got)
+	})
+
+	t.Run("words not alphabetically sorted at insertion", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('zebra'), ('aardvark')`)
+		require.NoError(t, err)
+
+		got, err := store.GetWordsInList(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"aardvark", "zebra"}, got)
+	})
+}
+
+func getVocabList(t testing.TB, db *sql.DB) []string {
+	t.Helper()
+	// Respect insertion order so tests don't need to sort
+	rows, err := db.QueryContext(t.Context(), `SELECT word FROM vocab ORDER BY creation_timestamp`)
+	require.NoError(t, err)
+	var list []string
+	for rows.Next() {
+		var word string
+		require.NoError(t, rows.Scan(&word))
+		list = append(list, word)
+	}
+	return list
 }

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -22,7 +23,7 @@ func NewListCommand(cfg *Config) *cobra.Command {
 Sample usage:
   termdict list`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.run(cfg.Out, cfg.Vocab)
+			return o.run(cmd.Context(), cfg.Out, cfg.Vocab)
 		},
 	}
 
@@ -32,18 +33,19 @@ Sample usage:
 	return cmd
 }
 
-func (o *listOptions) run(out io.Writer, v VocabRepo) error {
-	vl, err := v.Load()
+// TODO support json
+func (o *listOptions) run(ctx context.Context, out io.Writer, v VocabRepo) error {
+	words, err := v.GetWordsInList(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("list words: %w", err)
 	}
 
-	if len(vl.Words) == 0 {
+	if len(words) == 0 {
 		fmt.Fprintln(out, "no words in vocab list")
 		return nil
 	}
 
-	for _, word := range vl.Words {
+	for _, word := range words {
 		fmt.Fprintln(out, word)
 	}
 

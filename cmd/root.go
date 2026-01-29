@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/vocab"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -22,8 +21,9 @@ type Definer interface {
 }
 
 type VocabRepo interface {
-	Load() (vocab.List, error)
-	Save(vl vocab.List) error
+	AddWordsToList(ctx context.Context, words []string) error
+	RemoveWordsFromList(ctx context.Context, words []string) error
+	GetWordsInList(ctx context.Context) ([]string, error)
 }
 
 type rootOptions struct {
