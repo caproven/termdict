@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -31,7 +32,11 @@ func main() {
 		fmt.Println("Failed to open database")
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		if err := db.Close(); err != nil {
+			slog.Warn("Failed to close database", "error", err)
+		}
+	}(db)
 	store, err := sqlite.NewStore(context.Background(), db)
 	if err != nil {
 		fmt.Println("Failed to instantiate cache")

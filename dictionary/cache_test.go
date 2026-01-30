@@ -9,6 +9,7 @@ import (
 
 	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/dictionary/dictionarytest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFileCache_Contains(t *testing.T) {
@@ -63,7 +64,9 @@ func TestFileCache_Contains(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
-			defer os.RemoveAll(tempDir)
+			defer func(path string) {
+				assert.NoError(t, os.RemoveAll(path))
+			}(tempDir)
 
 			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
@@ -135,7 +138,9 @@ func TestFileCache_Save(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
-			defer os.RemoveAll(tempDir)
+			defer func(path string) {
+				assert.NoError(t, os.RemoveAll(path))
+			}(tempDir)
 
 			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
@@ -206,7 +211,9 @@ func TestFileCache_Lookup(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
-			defer os.RemoveAll(tempDir)
+			defer func(path string) {
+				assert.NoError(t, os.RemoveAll(path))
+			}(tempDir)
 
 			fc, err := dictionary.NewFileCache(tempDir)
 			if err != nil {
@@ -233,7 +240,9 @@ func TestFileCache_Lookup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func(path string) {
+			assert.NoError(t, os.RemoveAll(path))
+		}(tempDir)
 
 		fc, err := dictionary.NewFileCache(tempDir)
 		if err != nil {
