@@ -6,6 +6,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/caproven/termdict/dictionary"
@@ -43,7 +44,11 @@ func (s *Store) LookupWord(ctx context.Context, word string) ([]dictionary.Defin
 	if err != nil {
 		return nil, fmt.Errorf("query definitions for word %q: %w", word, err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}(rows)
 
 	var defs []dictionary.Definition
 	for rows.Next() {
@@ -201,7 +206,11 @@ func (s *Store) GetWordsInList(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query words in list: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}(rows)
 
 	var words []string
 	for rows.Next() {

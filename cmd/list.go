@@ -41,12 +41,12 @@ func (o *listOptions) run(ctx context.Context, out io.Writer, v VocabRepo) error
 	}
 
 	if len(words) == 0 {
-		fmt.Fprintln(out, "no words in vocab list")
+		_, _ = fmt.Fprintln(out, "no words in vocab list")
 		return nil
 	}
 
 	for _, word := range words {
-		fmt.Fprintln(out, word)
+		_, _ = fmt.Fprintln(out, word)
 	}
 
 	return nil

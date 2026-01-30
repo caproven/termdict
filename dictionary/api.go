@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
@@ -80,7 +81,11 @@ func (api WebAPI) query(ctx context.Context, w string) (apiResponse, error) {
 	if err != nil {
 		return apiResponse{}, err
 	}
-	defer resp.Body.Close()
+	defer func(body io.Closer) {
+		if err := body.Close(); err != nil {
+			slog.Warn("Failed to close http response body", "error", err)
+		}
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
