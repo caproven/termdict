@@ -6,7 +6,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/caproven/termdict/dictionary"
@@ -147,11 +146,9 @@ func (s *Store) AddWordsToList(ctx context.Context, words []string) error {
 			return fmt.Errorf("get rows affected: %w", err)
 		}
 		if affected == 0 {
-			// TODO how to better report this? Thinking should return new entries
-			slog.Info("Skip adding word to list which already exists", "word", word)
+			// TODO how to report this? Could return new entries
 			continue
 		}
-		slog.Info("Added word to list", "word", word)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -187,11 +184,9 @@ func (s *Store) RemoveWordsFromList(ctx context.Context, words []string) error {
 			return fmt.Errorf("get rows affected: %w", err)
 		}
 		if affected == 0 {
-			// TODO how to better report this? Thinking should return removed entries
-			slog.Info("Skip removing word from list which doesn't exists", "word", word)
+			// TODO how to report this? Could return new entries
 			continue
 		}
-		slog.Info("Removed word from list", "word", word)
 	}
 
 	if err := tx.Commit(); err != nil {
