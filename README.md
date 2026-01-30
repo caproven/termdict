@@ -41,4 +41,4 @@ Run `termdict` to see a list of available commands. Use the `--help` on any comm
 
 ## Storage
 
-termdict will store your vocab list under `{USER_CONFIG_DIR}/termdict/`.
+termdict will store data (cache, lists) under `$XDG_DATA_HOME/termdict/`.

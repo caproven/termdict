@@ -3,6 +3,7 @@ module github.com/caproven/termdict
 go 1.25
 
 require (
+	github.com/adrg/xdg v0.5.3
 	github.com/fatih/color v1.18.0
 	github.com/mattn/go-sqlite3 v1.14.33
 	github.com/pressly/goose/v3 v3.26.0
