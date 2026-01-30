@@ -137,6 +137,26 @@ func TestDefineCmd(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 	})
+
+	t.Run("random with output flag", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{"c"}, nil).Once()
+
+		definer := &mockDefiner{}
+		defer definer.AssertExpectations(t)
+		definer.On("Define", mock.Anything, "c").Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  definer,
+		})
+		cmd.SetArgs([]string{"define", "--output", "json", "--random"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
 }
 
 func TestTextPrinter(t *testing.T) {
