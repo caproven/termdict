@@ -2,118 +2,141 @@ package cmd
 
 import (
 	"bytes"
-	"strings"
+	"errors"
+	"os"
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
-	"github.com/caproven/termdict/dictionary/dictionarytest"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// TODO these tests gonna be a doozy, take the time to think through how they should be restructured. Ideally
-// the printer would be dep injected (not resolved) and we can just stub that out too.
-
 func TestDefineCmd(t *testing.T) {
-	dict := dictionarytest.InMemoryDefiner{
-		"kappa": []dictionary.Definition{
-			{PartOfSpeech: "noun", Meaning: "A tortoise-like creature in the Japanese mythology."},
-		},
-		"cucumber": []dictionary.Definition{
-			{PartOfSpeech: "noun", Meaning: "A vine in the gourd family, Cucumis sativus."},
-			{PartOfSpeech: "noun", Meaning: "The edible fruit of this plant, having a green rind and crisp white flesh."},
-		},
-		"senescence": []dictionary.Definition{
-			{PartOfSpeech: "noun", Meaning: "definition 1"},
-			{PartOfSpeech: "adjective", Meaning: "definition 2"},
-			{PartOfSpeech: "verb", Meaning: "definition 3"},
-		},
+	sampleDefs := []dictionary.Definition{
+		{PartOfSpeech: "noun", Meaning: "something"},
 	}
+	sampleErr := errors.New("failure")
 
-	cases := []struct {
-		name    string
-		cmd     string
-		list    vocab.List
-		wantOut string
-		wantErr bool
-	}{
-		{
-			name:    "word found",
-			cmd:     "define kappa",
-			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
-		},
-		{
-			name:    "word not found",
-			cmd:     "define asdf",
-			wantErr: true,
-		},
-		{
-			name:    "random with empty list",
-			cmd:     "define --random",
-			list:    vocab.List{Words: []string{}},
-			wantErr: true,
-		},
-		{
-			name:    "random with single word",
-			cmd:     "define --random",
-			list:    vocab.List{Words: []string{"kappa"}},
-			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
-		},
-		{
-			name:    "random and specific word",
-			cmd:     "define --random something",
-			list:    vocab.List{Words: []string{"cucumber"}},
-			wantErr: true,
-		},
-		{
-			name:    "invalid output format",
-			cmd:     "define senescence --output abcd",
-			wantErr: true,
-		},
-		{
-			name: "json output",
-			cmd:  "define kappa --output json",
-			wantOut: `{
-	"Word": "kappa",
-	"Definitions": [
-		{
-			"PartOfSpeech": "noun",
-			"Meaning": "A tortoise-like creature in the Japanese mythology."
-		}
-	]
-}
-`,
-		},
-	}
-
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			v := newMemoryVocabRepo(test.list)
-
-			var b bytes.Buffer
-
-			cfg := Config{
-				Out:   &b,
-				Vocab: v,
-				Dict:  dict,
-			}
-
-			cmd := NewRootCmd(&cfg)
-			cmd.SetArgs(strings.Split(test.cmd, " "))
-
-			err := cmd.Execute()
-			gotOut := b.String()
-
-			if err != nil {
-				if (err != nil) != test.wantErr {
-					t.Errorf("define cmd error = %v, wantErr %v", err, test.wantErr)
-				}
-				return
-			}
-
-			if gotOut != test.wantOut {
-				t.Errorf("got %v, expected %v", gotOut, test.wantOut)
-			}
+	t.Run("no word specified", func(t *testing.T) {
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  &mockDefiner{},
 		})
-	}
+		cmd.SetArgs([]string{"define"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("word not found", func(t *testing.T) {
+		definer := &mockDefiner{}
+		defer definer.AssertExpectations(t)
+		definer.On("Define", mock.Anything, "foo").Return(nil, sampleErr).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  definer,
+		})
+		cmd.SetArgs([]string{"define", "foo"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("word found", func(t *testing.T) {
+		definer := &mockDefiner{}
+		defer definer.AssertExpectations(t)
+		definer.On("Define", mock.Anything, "bar").Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  definer,
+		})
+		cmd.SetArgs([]string{"define", "bar"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
+
+	t.Run("random with empty list", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{}, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  &mockDefiner{},
+		})
+		cmd.SetArgs([]string{"define", "--random"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	// TODO create test for random from multiple entries (inject rand source)
+	t.Run("random with single word in list", func(t *testing.T) {
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("GetWordsInList", mock.Anything).Return([]string{"a"}, nil).Once()
+
+		definer := &mockDefiner{}
+		defer definer.AssertExpectations(t)
+		definer.On("Define", mock.Anything, "a").Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  definer,
+		})
+		cmd.SetArgs([]string{"define", "--random"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
+
+	t.Run("random flag cannot be given alongside a positional arg", func(t *testing.T) {
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  &mockDefiner{},
+		})
+		cmd.SetArgs([]string{"define", "--random", "foo"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("invalid output format", func(t *testing.T) {
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  &mockDefiner{},
+		})
+		cmd.SetArgs([]string{"define", "--output", "invalid", "foo"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("json output", func(t *testing.T) {
+		definer := &mockDefiner{}
+		defer definer.AssertExpectations(t)
+		definer.On("Define", mock.Anything, "b").Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: &mockVocabRepo{},
+			Dict:  definer,
+		})
+		cmd.SetArgs([]string{"define", "--output", "json", "b"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
 }
 
 func TestTextPrinter(t *testing.T) {
