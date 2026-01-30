@@ -37,11 +37,14 @@ Sample usage:
   termdict define --random`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if o.random && len(args) > 0 {
-				return errors.New("can't use --random and a specified word")
-			}
-
-			if len(args) > 0 {
+			if o.random {
+				if len(args) > 0 {
+					return errors.New("can't use --random and a specified word")
+				}
+			} else {
+				if len(args) == 0 {
+					return errors.New("must specify word")
+				}
 				o.word = args[0]
 			}
 
@@ -59,6 +62,12 @@ Sample usage:
 }
 
 func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d Definer) error {
+	// Don't call anything else if output format is invalid
+	printer, err := o.getPrinter(o.output)
+	if err != nil {
+		return err
+	}
+
 	word := o.word
 	if o.random {
 		var err error
@@ -73,10 +82,6 @@ func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d D
 		return err
 	}
 
-	printer, err := o.getPrinter(o.output)
-	if err != nil {
-		return err
-	}
 	return printer.Print(out, word, defs)
 }
 
