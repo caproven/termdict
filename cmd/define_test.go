@@ -46,21 +46,6 @@ func TestDefineCmd(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid definitions limit",
-			cmd:     "define cucumber --limit 1",
-			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n",
-		},
-		{
-			name:    "ignored definitions limit",
-			cmd:     "define cucumber --limit 0",
-			wantOut: "cucumber\n[noun] A vine in the gourd family, Cucumis sativus.\n[noun] The edible fruit of this plant, having a green rind and crisp white flesh.\n",
-		},
-		{
-			name:    "limit higher than def count",
-			cmd:     "define kappa --limit 10",
-			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
-		},
-		{
 			name:    "random with empty list",
 			cmd:     "define --random",
 			list:    vocab.List{Words: []string{}},
@@ -71,12 +56,6 @@ func TestDefineCmd(t *testing.T) {
 			cmd:     "define --random",
 			list:    vocab.List{Words: []string{"kappa"}},
 			wantOut: "kappa\n[noun] A tortoise-like creature in the Japanese mythology.\n",
-		},
-		{
-			name:    "random with definitions limit",
-			cmd:     "define --random --limit 2",
-			list:    vocab.List{Words: []string{"senescence"}},
-			wantOut: "senescence\n[noun] definition 1\n[adjective] definition 2\n",
 		},
 		{
 			name:    "random and specific word",
@@ -141,7 +120,6 @@ func TestTextPrinter(t *testing.T) {
 	cases := []struct {
 		name        string
 		word        string
-		limit       int
 		definitions []dictionary.Definition
 		expected    string
 	}{
@@ -159,7 +137,7 @@ func TestTextPrinter(t *testing.T) {
 `,
 		},
 		{
-			name: "multiple entries no limit",
+			name: "multiple entries",
 			word: "sponge",
 			definitions: []dictionary.Definition{
 				{
@@ -176,49 +154,12 @@ func TestTextPrinter(t *testing.T) {
 [verb] To clean, soak up, or dab with a sponge
 `,
 		},
-		{
-			name:  "negative limit ignored",
-			word:  "sponge",
-			limit: -5,
-			definitions: []dictionary.Definition{
-				{
-					PartOfSpeech: "noun",
-					Meaning:      "A piece of porous material used for washing",
-				},
-				{
-					PartOfSpeech: "verb",
-					Meaning:      "To clean, soak up, or dab with a sponge",
-				},
-			},
-			expected: `sponge
-[noun] A piece of porous material used for washing
-[verb] To clean, soak up, or dab with a sponge
-`,
-		},
-		{
-			name:  "positive limit obeyed",
-			word:  "sponge",
-			limit: 1,
-			definitions: []dictionary.Definition{
-				{
-					PartOfSpeech: "noun",
-					Meaning:      "A piece of porous material used for washing",
-				},
-				{
-					PartOfSpeech: "verb",
-					Meaning:      "To clean, soak up, or dab with a sponge",
-				},
-			},
-			expected: `sponge
-[noun] A piece of porous material used for washing
-`,
-		},
 	}
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			var b bytes.Buffer
-			printer := &textPrinter{limit: test.limit}
+			printer := &textPrinter{}
 			if err := printer.Print(&b, test.word, test.definitions); err != nil {
 				t.Errorf("failed to print definition: %v", err)
 			}
