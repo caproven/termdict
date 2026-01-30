@@ -82,7 +82,6 @@ func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d D
 
 func (o *defineOptions) registerPrinter(p defPrinter, cmd *cobra.Command) {
 	o.printers[p.OutputType()] = p
-	p.AddFlags(cmd)
 }
 
 func (o *defineOptions) getPrinter(output string) (defPrinter, error) {
@@ -108,17 +107,11 @@ func selectRandomWord(ctx context.Context, v VocabRepo) (string, error) {
 }
 
 type defPrinter interface {
-	AddFlags(*cobra.Command)
 	OutputType() string
 	Print(w io.Writer, word string, defs []dictionary.Definition) error
 }
 
 type textPrinter struct {
-	limit int
-}
-
-func (p *textPrinter) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().IntVar(&p.limit, "limit", 0, "limit the number of entries to display in text format")
 }
 
 func (p *textPrinter) OutputType() string {
@@ -132,14 +125,7 @@ func (p *textPrinter) Print(w io.Writer, word string, defs []dictionary.Definiti
 	}
 
 	blue := color.New(color.FgCyan).SprintFunc()
-	limit := p.limit
-	if limit <= 0 || limit > len(defs) {
-		limit = len(defs)
-	}
-	for i, def := range defs[:limit] {
-		if i >= limit {
-			break
-		}
+	for _, def := range defs {
 		if _, err := fmt.Fprintf(w, "[%s] %s\n", blue(def.PartOfSpeech), def.Meaning); err != nil {
 			return err
 		}
