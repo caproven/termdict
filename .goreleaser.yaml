@@ -8,8 +8,7 @@ before:
 
 builds:
   - env:
-      # Needed by mattn/go-sqlite3
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - linux
       - windows

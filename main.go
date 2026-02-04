@@ -12,7 +12,7 @@ import (
 	"github.com/caproven/termdict/cmd"
 	"github.com/caproven/termdict/dictionary"
 	"github.com/caproven/termdict/storage/sqlite"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -27,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("sqlite3", filepath.Join(dataDir, dbFilename))
+	db, err := sql.Open("sqlite", filepath.Join(dataDir, dbFilename))
 	if err != nil {
 		fmt.Println("Failed to open database")
 		os.Exit(1)
