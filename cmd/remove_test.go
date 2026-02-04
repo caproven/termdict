@@ -29,7 +29,7 @@ func TestRemoveCmd(t *testing.T) {
 	t.Run("failure removing from list", func(t *testing.T) {
 		vocabRepo := &mockVocabRepo{}
 		defer vocabRepo.AssertExpectations(t)
-		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.Anything).Return(errors.New("failure")).Once()
+		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.Anything).Return(nil, errors.New("failure")).Once()
 
 		cfg := Config{
 			Out:   os.Stdout,
@@ -49,7 +49,7 @@ func TestRemoveCmd(t *testing.T) {
 		defer vocabRepo.AssertExpectations(t)
 		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.MatchedBy(func(words []string) bool {
 			return reflect.DeepEqual(words, []string{"cucumber"})
-		})).Return(nil).Once()
+		})).Return(nil, nil).Once()
 
 		cfg := Config{
 			Out:   os.Stdout,
@@ -69,7 +69,7 @@ func TestRemoveCmd(t *testing.T) {
 		defer vocabRepo.AssertExpectations(t)
 		vocabRepo.On("RemoveWordsFromList", mock.Anything, mock.MatchedBy(func(words []string) bool {
 			return reflect.DeepEqual(words, []string{"kappa", "cucumber"})
-		})).Return(nil).Once()
+		})).Return(nil, nil).Once()
 
 		cfg := Config{
 			Out:   os.Stdout,

@@ -21,8 +21,8 @@ type Definer interface {
 }
 
 type VocabRepo interface {
-	AddWordsToList(ctx context.Context, words []string) error
-	RemoveWordsFromList(ctx context.Context, words []string) error
+	AddWordsToList(ctx context.Context, words []string) ([]string, error)
+	RemoveWordsFromList(ctx context.Context, words []string) ([]string, error)
 	GetWordsInList(ctx context.Context) ([]string, error)
 }
 

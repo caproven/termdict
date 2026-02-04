@@ -35,7 +35,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("failure adding words", func(t *testing.T) {
 		vocabRepo := &mockVocabRepo{}
 		defer vocabRepo.AssertExpectations(t)
-		vocabRepo.On("AddWordsToList", mock.Anything, mock.Anything).Return(sampleErr).Once()
+		vocabRepo.On("AddWordsToList", mock.Anything, mock.Anything).Return(nil, sampleErr).Once()
 
 		definer := &mockDefiner{}
 		defer definer.AssertExpectations(t)
@@ -74,7 +74,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("add word that cannot be defined with no check", func(t *testing.T) {
 		vocabRepo := &mockVocabRepo{}
 		defer vocabRepo.AssertExpectations(t)
-		vocabRepo.On("AddWordsToList", mock.Anything, []string{"foo"}).Return(nil).Once()
+		vocabRepo.On("AddWordsToList", mock.Anything, []string{"foo"}).Return(nil, nil).Once()
 
 		// Shouldn't be called
 		definer := &mockDefiner{}
@@ -94,7 +94,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("add word that can be defined", func(t *testing.T) {
 		vocabRepo := &mockVocabRepo{}
 		defer vocabRepo.AssertExpectations(t)
-		vocabRepo.On("AddWordsToList", mock.Anything, []string{"fortitude"}).Return(nil).Once()
+		vocabRepo.On("AddWordsToList", mock.Anything, []string{"fortitude"}).Return(nil, nil).Once()
 
 		definer := &mockDefiner{}
 		defer definer.AssertExpectations(t)
@@ -114,7 +114,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("add multiple words", func(t *testing.T) {
 		vocabRepo := &mockVocabRepo{}
 		defer vocabRepo.AssertExpectations(t)
-		vocabRepo.On("AddWordsToList", mock.Anything, []string{"porter", "placate"}).Return(nil).Once()
+		vocabRepo.On("AddWordsToList", mock.Anything, []string{"porter", "placate"}).Return(nil, nil).Once()
 
 		definer := &mockDefiner{}
 		defer definer.AssertExpectations(t)

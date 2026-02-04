@@ -48,10 +48,12 @@ func (o *addOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d Defi
 		}
 	}
 
-	// TODO check that some words are specified, and add a test.
-
-	if err := v.AddWordsToList(ctx, o.words); err != nil {
+	added, err := v.AddWordsToList(ctx, o.words)
+	if err != nil {
 		return fmt.Errorf("add words to list: %w", err)
+	}
+	for _, word := range added {
+		_, _ = fmt.Fprintf(out, "Added word %q\n", word)
 	}
 
 	return nil

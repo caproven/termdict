@@ -125,10 +125,11 @@ func (s *Store) SaveWord(ctx context.Context, word string, defs []dictionary.Def
 	return nil
 }
 
-func (s *Store) AddWordsToList(ctx context.Context, words []string) error {
+// AddWordsToList adds words to the list. Words that already exist are ignored, and newly inserted words are returned.
+func (s *Store) AddWordsToList(ctx context.Context, words []string) ([]string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer func() {
 		if err != nil {
@@ -136,37 +137,41 @@ func (s *Store) AddWordsToList(ctx context.Context, words []string) error {
 		}
 	}()
 
+	var inserted []string
+
 	insertStatement, err := tx.PrepareContext(ctx, `INSERT INTO vocab (word) VALUES (?) ON CONFLICT DO NOTHING`)
 	if err != nil {
-		return fmt.Errorf("prepare statement: %w", err)
+		return nil, fmt.Errorf("prepare statement: %w", err)
 	}
 	for _, word := range words {
 		word = strings.ToLower(word)
 		res, err := insertStatement.ExecContext(ctx, word)
 		if err != nil {
-			return fmt.Errorf("insert word %q: %w", word, err)
+			return nil, fmt.Errorf("insert word %q: %w", word, err)
 		}
 		affected, err := res.RowsAffected()
 		if err != nil {
-			return fmt.Errorf("get rows affected: %w", err)
+			return nil, fmt.Errorf("get rows affected: %w", err)
 		}
-		if affected == 0 {
-			// TODO how to report this? Could return new entries
+		if affected == 1 {
+			inserted = append(inserted, word)
 			continue
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit tx: %w", err)
+		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 
-	return nil
+	return inserted, nil
 }
 
-func (s *Store) RemoveWordsFromList(ctx context.Context, words []string) error {
+// RemoveWordsFromList removes words from the list. Words that don't exist are ignored, and words which are removed
+// by this operation are returned.
+func (s *Store) RemoveWordsFromList(ctx context.Context, words []string) ([]string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer func() {
 		if err != nil {
@@ -174,31 +179,33 @@ func (s *Store) RemoveWordsFromList(ctx context.Context, words []string) error {
 		}
 	}()
 
+	var removed []string
+
 	deleteStatement, err := tx.PrepareContext(ctx, `DELETE FROM vocab WHERE word = ?`)
 	if err != nil {
-		return fmt.Errorf("prepare statement: %w", err)
+		return nil, fmt.Errorf("prepare statement: %w", err)
 	}
 	for _, word := range words {
 		word = strings.ToLower(word)
 		res, err := deleteStatement.ExecContext(ctx, word)
 		if err != nil {
-			return fmt.Errorf("remove word %q: %w", word, err)
+			return nil, fmt.Errorf("remove word %q: %w", word, err)
 		}
 		affected, err := res.RowsAffected()
 		if err != nil {
-			return fmt.Errorf("get rows affected: %w", err)
+			return nil, fmt.Errorf("get rows affected: %w", err)
 		}
-		if affected == 0 {
-			// TODO how to report this? Could return new entries
+		if affected == 1 {
+			removed = append(removed, word)
 			continue
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit tx: %w", err)
+		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 
-	return nil
+	return removed, nil
 }
 
 func (s *Store) GetWordsInList(ctx context.Context) ([]string, error) {

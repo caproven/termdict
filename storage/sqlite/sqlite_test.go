@@ -248,8 +248,9 @@ func TestStore_AddWordsToList(t *testing.T) {
 		require.NoError(t, err)
 
 		list := []string{"cascade", "dour"}
-		err = store.AddWordsToList(t.Context(), list)
+		added, err := store.AddWordsToList(t.Context(), list)
 		require.NoError(t, err)
+		assert.Equal(t, list, added)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, list, got)
@@ -264,8 +265,9 @@ func TestStore_AddWordsToList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('foo')`)
 		require.NoError(t, err)
 
-		err = store.AddWordsToList(t.Context(), []string{"foo", "bar", "baz"})
+		added, err := store.AddWordsToList(t.Context(), []string{"foo", "bar", "baz"})
 		require.NoError(t, err)
+		assert.Equal(t, []string{"bar", "baz"}, added)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"foo", "bar", "baz"}, got)
@@ -280,8 +282,9 @@ func TestStore_AddWordsToList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('foo'), ('bar')`)
 		require.NoError(t, err)
 
-		err = store.AddWordsToList(t.Context(), []string{"foo", "bar"})
+		added, err := store.AddWordsToList(t.Context(), []string{"foo", "bar"})
 		require.NoError(t, err)
+		assert.Len(t, added, 0)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"foo", "bar"}, got)
@@ -293,8 +296,9 @@ func TestStore_AddWordsToList(t *testing.T) {
 		store, err := NewStore(t.Context(), db)
 		require.NoError(t, err)
 
-		err = store.AddWordsToList(t.Context(), []string{"IRRESOLUTE"})
+		added, err := store.AddWordsToList(t.Context(), []string{"IRRESOLUTE"})
 		require.NoError(t, err)
+		assert.Equal(t, []string{"irresolute"}, added)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"irresolute"}, got)
@@ -309,8 +313,9 @@ func TestStore_AddWordsToList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('cacophony')`)
 		require.NoError(t, err)
 
-		err = store.AddWordsToList(t.Context(), []string{"CACOPHONY"})
+		added, err := store.AddWordsToList(t.Context(), []string{"CACOPHONY"})
 		require.NoError(t, err)
+		assert.Len(t, added, 0)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"cacophony"}, got)
@@ -328,14 +333,15 @@ func TestStore_RemoveWordsFromList(t *testing.T) {
 		require.NoError(t, err)
 
 		// Out of order from inserts to show order doesn't matter
-		err = store.RemoveWordsFromList(t.Context(), []string{"eschew", "tepid", "surmise"})
+		removed, err := store.RemoveWordsFromList(t.Context(), []string{"eschew", "tepid", "surmise"})
 		require.NoError(t, err)
+		assert.Equal(t, []string{"eschew", "tepid", "surmise"}, removed)
 
 		got := getVocabList(t, db)
 		assert.Empty(t, got)
 	})
 
-	t.Run("some words to delete already exist", func(t *testing.T) {
+	t.Run("delete subset of existing words", func(t *testing.T) {
 		db := newTestDB(t)
 		defer closeAndAssertError(t, db)
 		store, err := NewStore(t.Context(), db)
@@ -344,11 +350,29 @@ func TestStore_RemoveWordsFromList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('pyrrhic'), ('pervade')`)
 		require.NoError(t, err)
 
-		err = store.RemoveWordsFromList(t.Context(), []string{"pyrrhic"})
+		removed, err := store.RemoveWordsFromList(t.Context(), []string{"pyrrhic"})
 		require.NoError(t, err)
+		assert.Equal(t, []string{"pyrrhic"}, removed)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"pervade"}, got)
+	})
+
+	t.Run("some words to delete exist", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('foo'), ('bar')`)
+		require.NoError(t, err)
+
+		removed, err := store.RemoveWordsFromList(t.Context(), []string{"foo", "baz"})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"foo"}, removed)
+
+		got := getVocabList(t, db)
+		assert.Equal(t, []string{"bar"}, got)
 	})
 
 	t.Run("no words to delete exist", func(t *testing.T) {
@@ -360,8 +384,9 @@ func TestStore_RemoveWordsFromList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('ambivalence')`)
 		require.NoError(t, err)
 
-		err = store.RemoveWordsFromList(t.Context(), []string{"qwerty", "dvorak"})
+		removed, err := store.RemoveWordsFromList(t.Context(), []string{"qwerty", "dvorak"})
 		require.NoError(t, err)
+		assert.Len(t, removed, 0)
 
 		got := getVocabList(t, db)
 		assert.Equal(t, []string{"ambivalence"}, got)
@@ -376,8 +401,9 @@ func TestStore_RemoveWordsFromList(t *testing.T) {
 		_, err = db.ExecContext(t.Context(), `INSERT INTO vocab (word) VALUES ('herbaceous')`)
 		require.NoError(t, err)
 
-		err = store.RemoveWordsFromList(t.Context(), []string{"HERBACEOUS"})
+		removed, err := store.RemoveWordsFromList(t.Context(), []string{"HERBACEOUS"})
 		require.NoError(t, err)
+		assert.Equal(t, []string{"herbaceous"}, removed)
 
 		got := getVocabList(t, db)
 		assert.Empty(t, got)

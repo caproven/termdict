@@ -11,14 +11,22 @@ type mockVocabRepo struct {
 	mock.Mock
 }
 
-func (m *mockVocabRepo) AddWordsToList(ctx context.Context, words []string) error {
+func (m *mockVocabRepo) AddWordsToList(ctx context.Context, words []string) ([]string, error) {
 	args := m.Called(ctx, words)
-	return args.Error(0)
+	added, err := args.Get(0), args.Error(1)
+	if added == nil {
+		return nil, err
+	}
+	return added.([]string), err
 }
 
-func (m *mockVocabRepo) RemoveWordsFromList(ctx context.Context, words []string) error {
+func (m *mockVocabRepo) RemoveWordsFromList(ctx context.Context, words []string) ([]string, error) {
 	args := m.Called(ctx, words)
-	return args.Error(0)
+	removed, err := args.Get(0), args.Error(1)
+	if removed == nil {
+		return nil, err
+	}
+	return removed.([]string), err
 }
 
 func (m *mockVocabRepo) GetWordsInList(ctx context.Context) ([]string, error) {

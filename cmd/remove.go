@@ -35,9 +35,12 @@ Sample usage:
 }
 
 func (o *removeOptions) run(ctx context.Context, out io.Writer, v VocabRepo) error {
-	if err := v.RemoveWordsFromList(ctx, o.words); err != nil {
+	removed, err := v.RemoveWordsFromList(ctx, o.words)
+	if err != nil {
 		return fmt.Errorf("remove words from list: %w", err)
 	}
-	// TODO output something to indicate success
+	for _, word := range removed {
+		_, _ = fmt.Fprintf(out, "Removed word %q\n", word)
+	}
 	return nil
 }
