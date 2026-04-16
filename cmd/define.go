@@ -6,19 +6,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"strings"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/rand"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 type defineOptions struct {
-	word     string
-	random   bool
-	output   string
-	printers map[string]defPrinter
+	word       string
+	random     bool
+	randomSeed uint64
+	output     string
+	printers   map[string]defPrinter
 }
 
 // NewDefineCommand constructs the define command
@@ -56,6 +57,7 @@ Sample usage:
 	o.registerPrinter(new(jsonPrinter), cmd)
 
 	cmd.Flags().BoolVar(&o.random, "random", false, "define a random word from your vocab list")
+	cmd.Flags().Uint64Var(&o.randomSeed, "seed", 0, "rng seed making usage of --random deterministic")
 	cmd.Flags().StringVarP(&o.output, "output", "o", "text", "output format; one of text, json")
 
 	return cmd
@@ -70,8 +72,13 @@ func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d D
 
 	word := o.word
 	if o.random {
+		source := randSource(rand.Default{})
+		if o.randomSeed != 0 {
+			source = rand.NewRand(o.randomSeed)
+		}
+
 		var err error
-		word, err = selectRandomWord(ctx, v)
+		word, err = selectRandomWord(ctx, v, source)
 		if err != nil {
 			return err
 		}
@@ -97,7 +104,7 @@ func (o *defineOptions) getPrinter(output string) (defPrinter, error) {
 	return printer, nil
 }
 
-func selectRandomWord(ctx context.Context, v VocabRepo) (string, error) {
+func selectRandomWord(ctx context.Context, v VocabRepo, randSource randSource) (string, error) {
 	list, err := v.GetWordsInList(ctx)
 	if err != nil {
 		return "", fmt.Errorf("list words: %w", err)
@@ -107,8 +114,12 @@ func selectRandomWord(ctx context.Context, v VocabRepo) (string, error) {
 		return "", errors.New("no words found")
 	}
 
-	word := list[rand.Intn(len(list))]
-	return word, nil
+	return list[randSource.IntN(len(list))], nil
+}
+
+type randSource interface {
+	// IntN returns a random number in the interval [0, n).
+	IntN(n int) int
 }
 
 type defPrinter interface {
