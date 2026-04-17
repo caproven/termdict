@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
@@ -156,6 +157,78 @@ func TestDefineCmd(t *testing.T) {
 
 		err := cmd.Execute()
 		require.NoError(t, err)
+	})
+
+	t.Run("random and save flags are mutually exclusive", func(t *testing.T) {
+		cmd := NewRootCmd(&Config{
+			Out: os.Stdout,
+		})
+		cmd.SetArgs([]string{"define", "--save", "--random"})
+		require.ErrorContains(t, cmd.Execute(), "flags")
+	})
+
+	t.Run("save new word", func(t *testing.T) {
+		word := "prism"
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("AddWordsToList", mock.Anything, mock.MatchedBy(func(words []string) bool {
+			return reflect.DeepEqual(words, []string{word})
+		})).Return([]string{word}, nil).Once()
+
+		dict := &mockDefiner{}
+		defer dict.AssertExpectations(t)
+		dict.On("Define", mock.Anything, word).Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dict,
+		})
+		cmd.SetArgs([]string{"define", word, "--save"})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+	})
+
+	t.Run("unknown word is not saved", func(t *testing.T) {
+		word := "growth"
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+
+		dict := &mockDefiner{}
+		defer dict.AssertExpectations(t)
+		dict.On("Define", mock.Anything, word).Return(nil, sampleErr).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dict,
+		})
+		cmd.SetArgs([]string{"define", word, "--save"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
+	})
+
+	t.Run("saving word fails", func(t *testing.T) {
+		word := "cumulonimbus"
+		vocabRepo := &mockVocabRepo{}
+		defer vocabRepo.AssertExpectations(t)
+		vocabRepo.On("AddWordsToList", mock.Anything, mock.Anything).Return(nil, sampleErr).Once()
+
+		dict := &mockDefiner{}
+		defer dict.AssertExpectations(t)
+		dict.On("Define", mock.Anything, word).Return(sampleDefs, nil).Once()
+
+		cmd := NewRootCmd(&Config{
+			Out:   os.Stdout,
+			Vocab: vocabRepo,
+			Dict:  dict,
+		})
+		cmd.SetArgs([]string{"define", word, "--save"})
+
+		err := cmd.Execute()
+		require.Error(t, err)
 	})
 }
 

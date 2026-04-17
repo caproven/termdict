@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/caproven/termdict/dictionary"
@@ -18,6 +19,7 @@ type defineOptions struct {
 	word       string
 	random     bool
 	randomSeed uint64
+	save       bool
 	output     string
 	printers   map[string]defPrinter
 }
@@ -58,7 +60,10 @@ Sample usage:
 
 	cmd.Flags().BoolVar(&o.random, "random", false, "define a random word from your vocab list")
 	cmd.Flags().Uint64Var(&o.randomSeed, "seed", 0, "rng seed making usage of --random deterministic")
+	cmd.Flags().BoolVar(&o.save, "save", false, "add to the vocab list if the word can be defined")
 	cmd.Flags().StringVarP(&o.output, "output", "o", "text", "output format; one of text, json")
+	// Avoid attempting to save words already in the list.
+	cmd.MarkFlagsMutuallyExclusive("save", "random")
 
 	return cmd
 }
@@ -87,6 +92,18 @@ func (o *defineOptions) run(ctx context.Context, out io.Writer, v VocabRepo, d D
 	defs, err := d.Define(ctx, word)
 	if err != nil {
 		return err
+	}
+
+	if o.save {
+		added, err := v.AddWordsToList(ctx, []string{word})
+		if err != nil {
+			return fmt.Errorf("save words to list: %w", err)
+		}
+		if len(added) > 0 {
+			_, _ = fmt.Fprintf(os.Stderr, "Saved word(s) to list: %q\n", added)
+		} else {
+			_, _ = fmt.Fprintln(os.Stderr, "Word already present in list, not saving")
+		}
 	}
 
 	return printer.Print(out, word, defs)
