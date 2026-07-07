@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/fatih/color v1.19.0
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/pressly/goose/v3 v3.27.2
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
