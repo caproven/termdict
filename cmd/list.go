@@ -29,6 +29,8 @@ Sample usage:
 
 	cmd.AddCommand(NewAddCommand(cfg))
 	cmd.AddCommand(NewRemoveCommand(cfg))
+	cmd.AddCommand(NewExportCommand(cfg))
+	cmd.AddCommand(NewImportCommand(cfg))
 
 	return cmd
 }

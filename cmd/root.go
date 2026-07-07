@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/vocab"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,8 @@ type VocabRepo interface {
 	AddWordsToList(ctx context.Context, words []string) ([]string, error)
 	RemoveWordsFromList(ctx context.Context, words []string) ([]string, error)
 	GetWordsInList(ctx context.Context) ([]string, error)
+	GetEvents(ctx context.Context) ([]vocab.Event, error)
+	AddEvents(ctx context.Context, events []vocab.Event) error
 }
 
 type rootOptions struct {

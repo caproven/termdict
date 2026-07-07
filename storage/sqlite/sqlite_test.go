@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/vocab"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
@@ -45,6 +46,16 @@ func TestNewStore(t *testing.T) {
 	// Check migrations and setup are idempotent
 	_, err = NewStore(t.Context(), db)
 	assert.NoError(t, err)
+
+	// Check vocab_events table exists
+	var eventsCount int
+	require.NoError(t, db.QueryRowContext(t.Context(), `SELECT count() FROM vocab_events`).Scan(&eventsCount))
+	assert.Equal(t, 0, eventsCount)
+
+	// Check vocab table exists with new schema
+	var vocabCount int
+	require.NoError(t, db.QueryRowContext(t.Context(), `SELECT count() FROM vocab`).Scan(&vocabCount))
+	assert.Equal(t, 0, vocabCount)
 }
 
 func TestStore_LookupWord(t *testing.T) {
@@ -270,7 +281,7 @@ func TestStore_AddWordsToList(t *testing.T) {
 		assert.Equal(t, []string{"bar", "baz"}, added)
 
 		got := getVocabList(t, db)
-		assert.Equal(t, []string{"foo", "bar", "baz"}, got)
+		assert.Equal(t, []string{"bar", "baz", "foo"}, got)
 	})
 
 	t.Run("all existing words", func(t *testing.T) {
@@ -287,7 +298,7 @@ func TestStore_AddWordsToList(t *testing.T) {
 		assert.Len(t, added, 0)
 
 		got := getVocabList(t, db)
-		assert.Equal(t, []string{"foo", "bar"}, got)
+		assert.Equal(t, []string{"bar", "foo"}, got)
 	})
 
 	t.Run("capitalization ignored for inserts", func(t *testing.T) {
@@ -451,10 +462,95 @@ func TestStore_GetWordsInList(t *testing.T) {
 	})
 }
 
+func TestStore_GetEvents(t *testing.T) {
+	t.Run("no events", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		events, err := store.GetEvents(t.Context())
+		require.NoError(t, err)
+		assert.Empty(t, events)
+	})
+
+	t.Run("returns events ordered by timestamp", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		_, err = store.AddWordsToList(t.Context(), []string{"bar", "foo"})
+		require.NoError(t, err)
+
+		events, err := store.GetEvents(t.Context())
+		require.NoError(t, err)
+		require.Len(t, events, 2)
+		assert.Equal(t, vocab.EventTypeAdd, events[0].Type)
+		assert.Equal(t, "bar", events[0].Word)
+		assert.Equal(t, vocab.EventTypeAdd, events[1].Type)
+		assert.Equal(t, "foo", events[1].Word)
+		assert.NotEmpty(t, events[0].ID)
+		assert.NotEmpty(t, events[1].ID)
+		assert.True(t, events[0].Timestamp <= events[1].Timestamp, "events should be ordered by timestamp")
+	})
+}
+
+func TestStore_AddEvents(t *testing.T) {
+	t.Run("inserts new events and rebuilds vocab", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		events := []vocab.Event{
+			{ID: "01J3XYZ1", Type: vocab.EventTypeAdd, Word: "foo", Timestamp: 100},
+			{ID: "01J3XYZ2", Type: vocab.EventTypeAdd, Word: "bar", Timestamp: 200},
+			{ID: "01J3XYZ3", Type: vocab.EventTypeRemove, Word: "foo", Timestamp: 300},
+		}
+
+		err = store.AddEvents(t.Context(), events)
+		require.NoError(t, err)
+
+		got, err := store.GetWordsInList(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, []string{"bar"}, got)
+
+		stored, err := store.GetEvents(t.Context())
+		require.NoError(t, err)
+		assert.Len(t, stored, 3)
+	})
+
+	t.Run("ignores duplicate event IDs", func(t *testing.T) {
+		db := newTestDB(t)
+		defer closeAndAssertError(t, db)
+		store, err := NewStore(t.Context(), db)
+		require.NoError(t, err)
+
+		events := []vocab.Event{
+			{ID: "01J3XYZ1", Type: vocab.EventTypeAdd, Word: "foo", Timestamp: 100},
+		}
+
+		err = store.AddEvents(t.Context(), events)
+		require.NoError(t, err)
+
+		// Same ID, should be ignored
+		events2 := []vocab.Event{
+			{ID: "01J3XYZ1", Type: vocab.EventTypeAdd, Word: "foo", Timestamp: 100},
+			{ID: "01J3XYZ2", Type: vocab.EventTypeAdd, Word: "bar", Timestamp: 200},
+		}
+		err = store.AddEvents(t.Context(), events2)
+		require.NoError(t, err)
+
+		stored, err := store.GetEvents(t.Context())
+		require.NoError(t, err)
+		assert.Len(t, stored, 2)
+	})
+}
+
 func getVocabList(t testing.TB, db *sql.DB) []string {
 	t.Helper()
-	// Respect insertion order so tests don't need to sort
-	rows, err := db.QueryContext(t.Context(), `SELECT word FROM vocab ORDER BY creation_timestamp`)
+	rows, err := db.QueryContext(t.Context(), `SELECT word FROM vocab ORDER BY word`)
 	require.NoError(t, err)
 	var list []string
 	for rows.Next() {

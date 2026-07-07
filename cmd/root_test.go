@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/vocab"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -36,6 +37,20 @@ func (m *mockVocabRepo) GetWordsInList(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return words.([]string), err
+}
+
+func (m *mockVocabRepo) GetEvents(ctx context.Context) ([]vocab.Event, error) {
+	args := m.Called(ctx)
+	events, err := args.Get(0), args.Error(1)
+	if events == nil {
+		return nil, err
+	}
+	return events.([]vocab.Event), err
+}
+
+func (m *mockVocabRepo) AddEvents(ctx context.Context, events []vocab.Event) error {
+	args := m.Called(ctx, events)
+	return args.Error(0)
 }
 
 type mockDefiner struct {

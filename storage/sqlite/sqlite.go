@@ -8,8 +8,11 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/caproven/termdict/dictionary"
+	"github.com/caproven/termdict/vocab"
+	"github.com/oklog/ulid/v2"
 	"github.com/pressly/goose/v3"
 )
 
@@ -154,6 +157,10 @@ func (s *Store) AddWordsToList(ctx context.Context, words []string) ([]string, e
 			return nil, fmt.Errorf("get rows affected: %w", err)
 		}
 		if affected == 1 {
+			event := newVocabEvent(vocab.EventTypeAdd, word)
+			if err := s.appendEvent(ctx, tx, event); err != nil {
+				return nil, fmt.Errorf("write vocab event: %w", err)
+			}
 			inserted = append(inserted, word)
 			continue
 		}
@@ -196,6 +203,10 @@ func (s *Store) RemoveWordsFromList(ctx context.Context, words []string) ([]stri
 			return nil, fmt.Errorf("get rows affected: %w", err)
 		}
 		if affected == 1 {
+			event := newVocabEvent(vocab.EventTypeRemove, word)
+			if err := s.appendEvent(ctx, tx, event); err != nil {
+				return nil, fmt.Errorf("write vocab event: %w", err)
+			}
 			removed = append(removed, word)
 			continue
 		}
@@ -229,4 +240,126 @@ func (s *Store) GetWordsInList(ctx context.Context) ([]string, error) {
 	}
 
 	return words, nil
+}
+
+func (s *Store) appendEvent(ctx context.Context, tx *sql.Tx, event vocab.Event) error {
+	_, err := tx.ExecContext(ctx,
+		`INSERT INTO vocab_events (id, type, word, timestamp) VALUES (?, ?, ?, ?)`,
+		event.ID, string(event.Type), event.Word, event.Timestamp)
+	if err != nil {
+		return fmt.Errorf("append event %q: %w", event.ID, err)
+	}
+	return nil
+}
+
+func (s *Store) rebuildVocab(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM vocab`); err != nil {
+		return fmt.Errorf("clear vocab: %w", err)
+	}
+
+	rows, err := tx.QueryContext(ctx, `SELECT type, word FROM vocab_events ORDER BY timestamp`)
+	if err != nil {
+		return fmt.Errorf("query vocab events: %w", err)
+	}
+	defer rows.Close()
+
+	lastAction := make(map[string]vocab.EventType)
+	for rows.Next() {
+		var eventType string
+		var word string
+		if err := rows.Scan(&eventType, &word); err != nil {
+			return fmt.Errorf("scan vocab event: %w", err)
+		}
+		lastAction[word] = vocab.EventType(eventType)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate over vocab events: %w", err)
+	}
+
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO vocab (word) VALUES (?)`)
+	if err != nil {
+		return fmt.Errorf("prepare vocab insert: %w", err)
+	}
+	for word, action := range lastAction {
+		if action == vocab.EventTypeAdd {
+			if _, err := stmt.ExecContext(ctx, word); err != nil {
+				return fmt.Errorf("insert word %q: %w", word, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetEvents returns all vocab events ordered by timestamp.
+func (s *Store) GetEvents(ctx context.Context) ([]vocab.Event, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, type, word, timestamp FROM vocab_events ORDER BY timestamp`)
+	if err != nil {
+		return nil, fmt.Errorf("query vocab events: %w", err)
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}()
+
+	var events []vocab.Event
+	for rows.Next() {
+		var event vocab.Event
+		if err := rows.Scan(&event.ID, &event.Type, &event.Word, &event.Timestamp); err != nil {
+			return nil, fmt.Errorf("scan vocab event: %w", err)
+		}
+		events = append(events, event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iter vocab events: %w", err)
+	}
+
+	return events, nil
+}
+
+// AddEvents inserts events into the store and rebuilds the materialized vocab view.
+func (s *Store) AddEvents(ctx context.Context, events []vocab.Event) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			err = errors.Join(err, tx.Rollback())
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx,
+		`INSERT OR IGNORE INTO vocab_events (id, type, word, timestamp) VALUES (?, ?, ?, ?)`)
+	if err != nil {
+		return fmt.Errorf("prepare statement: %w", err)
+	}
+
+	for _, event := range events {
+		if _, err := stmt.ExecContext(ctx, event.ID, string(event.Type), event.Word, event.Timestamp); err != nil {
+			return fmt.Errorf("insert vocab event %q: %w", event.ID, err)
+		}
+	}
+
+	if err := s.rebuildVocab(ctx, tx); err != nil {
+		return fmt.Errorf("rebuild vocab: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+
+	return nil
+}
+
+func newVocabEvent(eventType vocab.EventType, word string) vocab.Event {
+	id := ulid.Make()
+	return vocab.Event{
+		ID:        id.String(),
+		Type:      eventType,
+		Word:      word,
+		Timestamp: time.Now().Unix(),
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/caproven/termdict/vocab"
 	"github.com/oklog/ulid/v2"
 	"github.com/pressly/goose/v3"
 )
@@ -39,7 +40,7 @@ func upVocabEvents(ctx context.Context, tx *sql.Tx) error {
 		id := ulid.MustNewDefault(time.Unix(ts, 0))
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO vocab_events (id, type, word, timestamp) VALUES (?, ?, ?, ?)`,
-			id.String(), string(VocabEventTypeAdd), word, ts); err != nil {
+			id.String(), string(vocab.EventTypeAdd), word, ts); err != nil {
 			return fmt.Errorf("insert vocab event: %w", err)
 		}
 	}
