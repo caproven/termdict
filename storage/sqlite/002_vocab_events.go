@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/caproven/termdict/vocab"
@@ -29,7 +30,11 @@ func upVocabEvents(ctx context.Context, tx *sql.Tx) error {
 	if err != nil {
 		return fmt.Errorf("query existing vocab: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}()
 
 	for rows.Next() {
 		var word string
@@ -71,7 +76,11 @@ func downVocabEvents(ctx context.Context, tx *sql.Tx) error {
 	if err != nil {
 		return fmt.Errorf("query vocab: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}()
 
 	var words []string
 	for rows.Next() {

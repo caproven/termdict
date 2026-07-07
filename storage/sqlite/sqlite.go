@@ -261,7 +261,11 @@ func (s *Store) rebuildVocab(ctx context.Context, tx *sql.Tx) error {
 	if err != nil {
 		return fmt.Errorf("query vocab events: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Warn("Failed to close rows", "error", err)
+		}
+	}()
 
 	lastAction := make(map[string]vocab.EventType)
 	for rows.Next() {
